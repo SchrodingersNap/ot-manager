@@ -1,11 +1,9 @@
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL OT Manager (V8 Unified)</title>
+    <title>IOCL OT Manager (V9 Smart Sort)</title>
     <style>
         :root { --primary: #0056b3; --bg: #f4f7f6; --text: #333; --card: #fff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 900px; margin: 0 auto; }
@@ -61,8 +59,8 @@
 <body>
 
     <header>
-        <h1>✈️ IOCL OT Manager V8</h1>
-        <div class="subtitle">Unified Sorting | Smart Ranking (1, 2, 3...)</div>
+        <h1>✈️ IOCL OT Manager V9</h1>
+        <div class="subtitle">Smart Sorting: Hours > Recency > Base Sequence</div>
     </header>
 
     <div class="tabs">
@@ -106,6 +104,7 @@
         <div id="resultSection" style="display:none; margin-top:20px; border-top:2px solid #eee; padding-top:10px;">
             
             <h3 style="margin:0 0 10px 0;">Priority Sequence</h3>
+            <p style="font-size:0.8em; color:#666;"><i>Sorting Logic: Lowest Hours → Least Recently Worked → Base Sequence</i></p>
             <table>
                 <thead>
                     <tr>
@@ -138,7 +137,7 @@
 
     <div id="setup" class="card">
         <h3>1. New Month Setup</h3>
-        <p style="color:#666; font-size:0.9em;">Paste Excel data to set sequence and reset hours to zero.</p>
+        <p style="color:#666; font-size:0.9em;">Paste Excel data to set the initial "Base Sequence" and reset hours to zero.</p>
         <textarea id="excelInput" placeholder="Paste Excel data here..."></textarea>
         <button class="btn-sec" onclick="processExcel()">Set Sequence & Reset</button>
         <div id="unmatchedList" style="margin-top:10px; color:red;"></div>
@@ -154,7 +153,7 @@
                     <th>Name</th>
                     <th>Grp</th>
                     <th>Hrs</th>
-                    <th>Rank</th>
+                    <th>Last OT</th>
                 </tr>
             </thead>
             <tbody id="dbBody"></tbody>
@@ -166,6 +165,7 @@
 <script>
     const HOURS = { 'A': 6, 'B': 8, 'C': 10 };
     
+    // Default Roster (V8 list)
     const defaultRoster = [
         { name: "Bidhan Deb Barma", group: 1 }, { name: "Sanjay Paul", group: 1 },
         { name: "Gourab Biswas", group: 1 }, { name: "Pardeep .", group: 1 },
@@ -199,24 +199,30 @@
 
     let roster = [];
 
+    // === STARTUP ===
     window.onload = () => {
-        // Use v8 key to force fresh load with correct logic
-        const saved = localStorage.getItem('iocl_v8_data');
+        const saved = localStorage.getItem('iocl_v9_data');
         if (saved) {
             roster = JSON.parse(saved);
         } else {
-            roster = defaultRoster.map((p, i) => ({ ...p, current: 0, baseRank: i }));
+            // Init: current=0, baseRank=index, lastWorked=0
+            roster = defaultRoster.map((p, i) => ({ 
+                ...p, 
+                current: 0, 
+                baseRank: i,
+                lastWorked: 0 // New field for Tie-Breaking
+            }));
             save();
         }
         renderDB();
     };
 
     function save() {
-        localStorage.setItem('iocl_v8_data', JSON.stringify(roster));
+        localStorage.setItem('iocl_v9_data', JSON.stringify(roster));
         renderDB();
     }
 
-    // === GENERATION LOGIC ===
+    // === GENERATE LIST ===
     function generateList() {
         const groups = document.getElementById('dutyInput').value.split(/[\s,]+/).map(Number).filter(n => n > 0);
         const shift = document.getElementById('shiftInput').value;
@@ -224,7 +230,7 @@
         const repName = document.getElementById('swapReplacer').value;
         const orgName = document.getElementById('swapOriginal').value;
 
-        // 1. Identify Special Cases
+        // 1. Identification
         let absentIdx = [];
         absentees.forEach(a => {
             const p = findPerson(a);
@@ -243,41 +249,37 @@
             if (rep) replacerIdx = rep.index;
         }
 
-        // 2. Build Single Main List (for sequence preservation)
+        // 2. Build List
         let mainList = [];
-        let extraList = []; // Replacers
+        let extraList = [];
 
-        // Add Replacer to Extra List
         if (replacerIdx !== -1) {
             extraList.push({ ...roster[replacerIdx], idx: replacerIdx });
         }
 
-        // Iterate Roster
         roster.forEach((p, index) => {
-            // Skip Replacer (already handled in extra list)
             if (index === replacerIdx) return;
 
-            // Check if in Duty Group
             if (groups.includes(p.group)) {
                 let status = 'Normal';
-                
-                // Case: Absent
-                if (absentIdx.includes(index)) {
-                    status = 'A';
-                }
-                // Case: Original in Swap (DC Out)
-                else if (index === originalIdx) {
-                    status = 'DC';
-                }
+                if (absentIdx.includes(index)) status = 'A';
+                else if (index === originalIdx) status = 'DC';
                 
                 mainList.push({ ...p, idx: index, status: status });
             }
         });
 
-        // 3. Unified Sorting (Hrs -> Base Rank)
-        // This ensures A and DC stay "in sequence" based on their hours
+        // 3. SMART SORTING LOGIC
         mainList.sort((a, b) => {
+            // Condition 1: Hours (Ascending)
             if (a.current !== b.current) return a.current - b.current;
+            
+            // Condition 2: Recency (Ascending Timestamp)
+            // Smaller timestamp = Older date = Higher Priority (Rank 1)
+            // Larger timestamp = Recent date = Lower Priority (Rank Last)
+            if (a.lastWorked !== b.lastWorked) return a.lastWorked - b.lastWorked;
+
+            // Condition 3: Base Sequence (Ascending)
             return a.baseRank - b.baseRank;
         });
 
@@ -293,16 +295,13 @@
         document.getElementById('resultSection').style.display = 'block';
         const add = HOURS[shift];
 
-        // RENDER MAIN TABLE
+        // MAIN TABLE
         let rankCounter = 1;
-        
         mainList.forEach(p => {
             const tr = document.createElement('tr');
-            
             let rankHtml = '';
             let rowClass = '';
 
-            // Assign numbers ONLY to Normal people
             if (p.status === 'A') {
                 rankHtml = '<span class="status-A">A</span>';
                 rowClass = 'row-absent';
@@ -310,7 +309,7 @@
                 rankHtml = '<span class="status-DC">DC</span>';
                 rowClass = 'row-dc';
             } else {
-                rankHtml = `<span class="status-Rank">${rankCounter++}</span>`; // Simple 1, 2, 3
+                rankHtml = `<span class="status-Rank">${rankCounter++}</span>`;
             }
 
             tr.className = rowClass;
@@ -327,7 +326,7 @@
             mainBody.appendChild(tr);
         });
 
-        // RENDER EXTRA TABLE
+        // EXTRA TABLE
         extraList.forEach(p => {
             const tr = document.createElement('tr');
             tr.className = 'row-extra';
@@ -344,19 +343,25 @@
             extraBody.appendChild(tr);
         });
 
-        if(extraList.length === 0) {
-            extraBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">No duty swaps entered.</td></tr>';
-        }
+        if(extraList.length === 0) extraBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">No duty swaps.</td></tr>';
     }
 
     function update(index, amount, isRefusal) {
-        if (!confirm(`Update ${roster[index].name} hours?`)) return;
+        if (!confirm(`Update ${roster[index].name}?`)) return;
+        
         roster[index].current += amount;
+        
+        // Update "Last Worked" timestamp ONLY if they worked (not refused)
+        // Or should Refusal also count as an 'event'? 
+        // Usually Refusal pushes you down too. Let's update timestamp for both.
+        roster[index].lastWorked = Date.now();
+        
         save();
         generateList();
-        showMsg("Database Updated!");
+        showMsg("Updated! Sequence re-sorted.");
     }
 
+    // === MONTH SETUP ===
     function processExcel() {
         const lines = document.getElementById('excelInput').value.split('\n');
         let tempStats = roster.map((p, i) => ({ index: i, total: 0 }));
@@ -380,10 +385,14 @@
             }
         });
 
+        // Sort by Excel totals
         tempStats.sort((a, b) => a.total - b.total);
+
+        // Assign new Rank and Reset
         tempStats.forEach((item, newRank) => {
             roster[item.index].baseRank = newRank;
             roster[item.index].current = 0;
+            roster[item.index].lastWorked = 0; // Reset timestamps too
         });
 
         save();
@@ -393,7 +402,7 @@
 
     function hardReset() {
         if (confirm("DELETE ALL DATA?")) {
-            localStorage.removeItem('iocl_v8_data');
+            localStorage.removeItem('iocl_v9_data');
             location.reload();
         }
     }
@@ -424,7 +433,15 @@
         roster.forEach(p => {
             if (search && !p.name.toLowerCase().includes(search)) return;
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${p.name}</td><td>${p.group}</td><td>${p.current}</td><td>${p.baseRank}</td>`;
+            
+            // Format Timestamp
+            let dateStr = "-";
+            if (p.lastWorked > 0) {
+                const d = new Date(p.lastWorked);
+                dateStr = d.toLocaleDateString() + " " + d.getHours() + ":" + d.getMinutes();
+            }
+
+            tr.innerHTML = `<td>${p.name}</td><td>${p.group}</td><td>${p.current}</td><td style="font-size:0.8em">${dateStr}</td>`;
             tbody.appendChild(tr);
         });
     }
@@ -438,5 +455,3 @@
 </script>
 </body>
 </html>
-
-```
