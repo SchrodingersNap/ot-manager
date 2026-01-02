@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL OT Manager (V11 Master)</title>
+    <title>IOCL OT Manager (V13)</title>
     <style>
         :root { --primary: #0056b3; --bg: #f4f7f6; --text: #333; --card: #fff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 950px; margin: 0 auto; }
@@ -36,6 +36,11 @@
         .btn-sec { background: #6c757d; color: white; }
         .btn-danger { background: #dc3545; color: white; }
         .btn-sm { width: auto; padding: 6px 12px; font-size: 0.85em; margin: 0; }
+        .btn-add { background: #28a745; color: white; margin-top: 0; width: auto; padding: 10px 15px; }
+
+        /* Swap List Item */
+        .swap-item { background: #e8f5e9; padding: 8px; border-radius: 6px; margin-top: 5px; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center; border: 1px solid #c8e6c9; }
+        .del-swap { color: red; cursor: pointer; font-weight: bold; margin-left: 10px; }
 
         /* Tables */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
@@ -53,8 +58,8 @@
         .status-Rank { color: #0056b3; font-weight: bold; font-size: 1.1em; }
         
         .badge { display: inline-block; padding: 2px 6px; border-radius: 6px; font-size: 0.75em; font-weight: 700; margin-right: 5px; }
-        .badge-dr { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; } /* Blue for Drivers */
-        .badge-nd { background: #f5f5f5; color: #616161; border: 1px solid #e0e0e0; } /* Gray for Non-Drivers */
+        .badge-dr { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; } 
+        .badge-nd { background: #f5f5f5; color: #616161; border: 1px solid #e0e0e0; }
 
         /* Notifications */
         #statusMsg { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 20px; border-radius: 8px; display: none; z-index: 100; }
@@ -64,8 +69,8 @@
 <body>
 
     <header>
-        <h1>✈️ IOCL OT Manager V11</h1>
-        <div class="subtitle">Driver/Non-Driver Distinction | Unified Sorting</div>
+        <h1>✈️ IOCL OT Manager V13</h1>
+        <div class="subtitle">Multi-Swap Support</div>
     </header>
 
     <div class="tabs">
@@ -90,18 +95,20 @@
             </div>
         </div>
         
-        <div class="grid-2" style="margin-top: 15px;">
-            <div>
-                <label>Absentees</label>
-                <input type="text" id="absentInput" placeholder="Search name...">
+        <div style="margin-top: 15px;">
+            <label>Absentees</label>
+            <input type="text" id="absentInput" placeholder="Search name (comma separated)...">
+        </div>
+
+        <div style="margin-top: 15px; background: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
+            <label style="color:#2e7d32;">Duty Swap Manager (Multiple Allowed)</label>
+            <div style="display:flex; gap:5px; align-items:center;">
+                <input type="text" id="swapReplacer" placeholder="Worker (Replacer)">
+                <span>for</span>
+                <input type="text" id="swapOriginal" placeholder="Original (Off)">
+                <button class="btn-add" onclick="addSwap()">+ Add</button>
             </div>
-            <div>
-                <label>Duty Swap: [Worker] for [Original]</label>
-                <div style="display:flex; gap:5px;">
-                    <input type="text" id="swapReplacer" placeholder="Worker">
-                    <input type="text" id="swapOriginal" placeholder="Original">
-                </div>
-            </div>
+            <div id="activeSwapsList"></div>
         </div>
 
         <button class="btn-primary" onclick="generateList()">🔄 Generate Priority List</button>
@@ -109,7 +116,6 @@
         <div id="resultSection" style="display:none; margin-top:20px; border-top:2px solid #eee; padding-top:10px;">
             
             <h3 style="margin:0 0 10px 0;">Priority Sequence</h3>
-            <p style="font-size:0.8em; color:#666;"><i>Lowest Hours → Least Recently Worked → Base Sequence</i></p>
             <table>
                 <thead>
                     <tr>
@@ -161,7 +167,7 @@
                     <th>Role</th>
                     <th>Grp</th>
                     <th>Hrs</th>
-                    <th>Base Seq</th>
+                    <th>Seq</th>
                 </tr>
             </thead>
             <tbody id="dbBody"></tbody>
@@ -173,151 +179,157 @@
 <script>
     const HOURS = { 'A': 6, 'B': 8, 'C': 10 };
     
-    // DB MAP: Includes Role (Dr = Driver, ND = Non-Driver)
+    // DB Map
     const dbMap = [
-        // GROUP 1
-        { name: "Bidhan Deb Barma", group: 1, role: "Dr" }, 
-        { name: "Sanjay Paul", group: 1, role: "Dr" },
-        { name: "Gourab Biswas", group: 1, role: "Dr" }, 
-        { name: "Pardeep .", group: 1, role: "Dr" },
-        { name: "Mrityunjoy Saha", group: 1, role: "ND" }, 
-        { name: "Pradip Kumar Mondal", group: 1, role: "ND" },
-        { name: "Pramod Kumar Meena", group: 1, role: "ND" }, 
-        { name: "Sunit Kumar Das", group: 1, role: "ND" },
-
-        // GROUP 2
-        { name: "Pankaj Chowdhury", group: 2, role: "Dr" }, 
-        { name: "PARTHA ROY", group: 2, role: "Dr" },
-        { name: "Mukesh Swami", group: 2, role: "Dr" }, 
-        { name: "Joydeb Mandal", group: 2, role: "Dr" },
-        { name: "Abhisake Chandan Tirkey", group: 2, role: "ND" }, 
-        { name: "Kingsuk Burman", group: 2, role: "ND" },
-        { name: "Shibendu Dutta", group: 2, role: "ND" }, 
-        { name: "Rajib Kumar Paul", group: 2, role: "ND" },
-
-        // GROUP 3
-        { name: "Rajendra Kumar", group: 3, role: "Dr" }, 
-        { name: "Amit Kumar", group: 3, role: "Dr" },
-        { name: "VARASALA AMBEDKAR", group: 3, role: "Dr" }, 
-        { name: "Vikas Chhikara", group: 3, role: "Dr" },
-        { name: "DIPANKAR DEY", group: 3, role: "Dr" },
-        { name: "Sanjib Kumar Mondal", group: 3, role: "ND" }, 
-        { name: "Sukumar Maji", group: 3, role: "ND" }, 
-        { name: "Alok Roy", group: 3, role: "ND" }, 
+        { name: "Bidhan Deb Barma", group: 1, role: "Dr" }, { name: "Sanjay Paul", group: 1, role: "Dr" },
+        { name: "Gourab Biswas", group: 1, role: "Dr" }, { name: "Pardeep .", group: 1, role: "Dr" },
+        { name: "Mrityunjoy Saha", group: 1, role: "ND" }, { name: "Pradip Kumar Mondal", group: 1, role: "ND" },
+        { name: "Pramod Kumar Meena", group: 1, role: "ND" }, { name: "Sunit Kumar Das", group: 1, role: "ND" },
+        { name: "Pankaj Chowdhury", group: 2, role: "Dr" }, { name: "PARTHA ROY", group: 2, role: "Dr" },
+        { name: "Mukesh Swami", group: 2, role: "Dr" }, { name: "Joydeb Mandal", group: 2, role: "Dr" },
+        { name: "Abhisake Chandan Tirkey", group: 2, role: "ND" }, { name: "Kingsuk Burman", group: 2, role: "ND" },
+        { name: "Shibendu Dutta", group: 2, role: "ND" }, { name: "Rajib Kumar Paul", group: 2, role: "ND" },
+        { name: "Rajendra Kumar", group: 3, role: "Dr" }, { name: "Amit Kumar", group: 3, role: "Dr" },
+        { name: "VARASALA AMBEDKAR", group: 3, role: "Dr" }, { name: "Vikas Chhikara", group: 3, role: "Dr" },
+        { name: "DIPANKAR DEY", group: 3, role: "Dr" }, { name: "Sanjib Kumar Mondal", group: 3, role: "ND" },
+        { name: "Sukumar Maji", group: 3, role: "ND" }, { name: "Alok Roy", group: 3, role: "ND" },
         { name: "Pradip Karmakar", group: 3, role: "ND" },
-
-        // GROUP 4
-        { name: "Mohit", group: 4, role: "Dr" }, 
-        { name: "Jitender .", group: 4, role: "Dr" },
-        { name: "Subhra Jyoti Banerjee", group: 4, role: "Dr" }, 
-        { name: "Tej Singh Meena", group: 4, role: "Dr" },
-        { name: "Sarbeswar Hembram", group: 4, role: "ND" }, 
-        { name: "RAJIB SEN", group: 4, role: "ND" }, 
-        { name: "Gopal Howli", group: 4, role: "ND" }, 
-        { name: "Kalyan Mondal", group: 4, role: "ND" },
-
-        // GROUP 5
-        { name: "Chandra Nath Mitra", group: 5, role: "Dr" }, 
-        { name: "Sudhir .", group: 5, role: "Dr" },
-        { name: "Manjeet .", group: 5, role: "Dr" }, 
-        { name: "Somenath Mandal", group: 5, role: "Dr" },
-        { name: "BISWARUP CHAKRABORTY", group: 5, role: "ND" }, 
-        { name: "Ashok Dasgupta", group: 5, role: "ND" }, 
-        { name: "Sanjay Dey", group: 5, role: "ND" }, 
-        { name: "Sanjit Mondal", group: 5, role: "ND" },
-
-        // GROUP 6
-        { name: "Subhajit Saha", group: 6, role: "Dr" }, 
-        { name: "Soumen Mondal", group: 6, role: "Dr" },
-        { name: "Naveen .", group: 6, role: "Dr" }, 
-        { name: "Shyamal Kumar Ghosh", group: 6, role: "ND" }, 
-        { name: "Dhirendar Kumar", group: 6, role: "ND" }, 
-        { name: "Soumalaya", group: 6, role: "ND" },
-
-        // GROUP 7
-        { name: "Azam Ali", group: 7, role: "Dr" }, 
-        { name: "Nitin Kumar", group: 7, role: "Dr" },
-        { name: "Anil Kumar", group: 7, role: "Dr" }, 
-        { name: "Goutam Patra", group: 7, role: "Dr" },
-        { name: "PALLAB KR. SAHA", group: 7, role: "ND" }, 
-        { name: "SK. SABIR AHMED", group: 7, role: "ND" }, 
-        { name: "SOMENATH DAS", group: 7, role: "ND" }, 
-        { name: "Hemlal Sharma", group: 7, role: "ND" }
+        { name: "Mohit", group: 4, role: "Dr" }, { name: "Jitender .", group: 4, role: "Dr" },
+        { name: "Subhra Jyoti Banerjee", group: 4, role: "Dr" }, { name: "Tej Singh Meena", group: 4, role: "Dr" },
+        { name: "Sarbeswar Hembram", group: 4, role: "ND" }, { name: "RAJIB SEN", group: 4, role: "ND" },
+        { name: "Gopal Howli", group: 4, role: "ND" }, { name: "Kalyan Mondal", group: 4, role: "ND" },
+        { name: "Chandra Nath Mitra", group: 5, role: "Dr" }, { name: "Sudhir .", group: 5, role: "Dr" },
+        { name: "Manjeet .", group: 5, role: "Dr" }, { name: "Somenath Mandal", group: 5, role: "Dr" },
+        { name: "BISWARUP CHAKRABORTY", group: 5, role: "ND" }, { name: "Ashok Dasgupta", group: 5, role: "ND" },
+        { name: "Sanjay Dey", group: 5, role: "ND" }, { name: "Sanjit Mondal", group: 5, role: "ND" },
+        { name: "Subhajit Saha", group: 6, role: "Dr" }, { name: "Soumen Mondal", group: 6, role: "Dr" },
+        { name: "Naveen .", group: 6, role: "Dr" }, { name: "Shyamal Kumar Ghosh", group: 6, role: "ND" },
+        { name: "Dhirendar Kumar", group: 6, role: "ND" }, { name: "Soumalaya", group: 6, role: "ND" },
+        { name: "Azam Ali", group: 7, role: "Dr" }, { name: "Nitin Kumar", group: 7, role: "Dr" },
+        { name: "Anil Kumar", group: 7, role: "Dr" }, { name: "Goutam Patra", group: 7, role: "Dr" },
+        { name: "PALLAB KR. SAHA", group: 7, role: "ND" }, { name: "SK. SABIR AHMED", group: 7, role: "ND" },
+        { name: "SOMENATH DAS", group: 7, role: "ND" }, { name: "Hemlal Sharma", group: 7, role: "ND" }
     ];
 
     let roster = [];
+    let activeSwaps = []; // Store multiple swaps
 
-    // === STARTUP ===
     window.onload = () => {
-        // v11 key
-        const saved = localStorage.getItem('iocl_v11_data');
+        const saved = localStorage.getItem('iocl_v13_data');
         if (saved) {
             roster = JSON.parse(saved);
         } else {
-            roster = dbMap.map((p, i) => ({ 
-                ...p, 
-                current: 0, 
-                baseRank: 999, 
-                lastWorked: 0
-            }));
+            roster = dbMap.map((p, i) => ({ ...p, current: 0, baseRank: i, lastWorked: 0 }));
             save();
         }
         renderDB();
     };
 
     function save() {
-        localStorage.setItem('iocl_v11_data', JSON.stringify(roster));
+        localStorage.setItem('iocl_v13_data', JSON.stringify(roster));
         renderDB();
     }
 
-    // === GENERATE LIST ===
+    // === SWAP MANAGER ===
+    function addSwap() {
+        const repName = document.getElementById('swapReplacer').value;
+        const orgName = document.getElementById('swapOriginal').value;
+        
+        if (!repName || !orgName) {
+            alert("Please enter both Worker and Original names");
+            return;
+        }
+
+        const rep = findPerson(repName);
+        const org = findPerson(orgName);
+
+        if (!rep) { alert("Replacer not found in database"); return; }
+        if (!org) { alert("Original not found in database"); return; }
+
+        // Add to active swaps list
+        activeSwaps.push({ 
+            repName: rep.name, 
+            repIdx: rep.index, 
+            orgName: org.name, 
+            orgIdx: org.index 
+        });
+
+        // Clear inputs
+        document.getElementById('swapReplacer').value = '';
+        document.getElementById('swapOriginal').value = '';
+        renderSwaps();
+    }
+
+    function removeSwap(index) {
+        activeSwaps.splice(index, 1);
+        renderSwaps();
+    }
+
+    function renderSwaps() {
+        const div = document.getElementById('activeSwapsList');
+        div.innerHTML = '';
+        activeSwaps.forEach((s, i) => {
+            div.innerHTML += `
+                <div class="swap-item">
+                    <span><strong>${s.repName}</strong> for ${s.orgName}</span>
+                    <span class="del-swap" onclick="removeSwap(${i})">X</span>
+                </div>
+            `;
+        });
+    }
+
+    // === CORE LOGIC ===
     function generateList() {
         const groups = document.getElementById('dutyInput').value.split(/[\s,]+/).map(Number).filter(n => n > 0);
         const shift = document.getElementById('shiftInput').value;
         const absentees = document.getElementById('absentInput').value.toLowerCase().split(',').filter(s => s.trim());
-        const repName = document.getElementById('swapReplacer').value;
-        const orgName = document.getElementById('swapOriginal').value;
 
-        // 1. Identify Special Cases
+        // 1. Identify Absentees
         let absentIdx = [];
         absentees.forEach(a => {
             const p = findPerson(a);
             if(p) absentIdx.push(p.index);
         });
 
-        let originalIdx = -1;
-        if (orgName) {
-            const org = findPerson(orgName);
-            if (org) originalIdx = org.index;
-        }
+        // 2. Identify DC Originals and Replacers from Active Swaps
+        let dcOriginalsIdx = [];
+        let replacersIdx = [];
 
-        let replacerIdx = -1;
-        if (repName) {
-            const rep = findPerson(repName);
-            if (rep) replacerIdx = rep.index;
-        }
+        activeSwaps.forEach(s => {
+            dcOriginalsIdx.push(s.orgIdx);
+            
+            // Add replacer index
+            replacersIdx.push(s.repIdx);
 
-        // 2. Build Lists
+            // Important: If replacer was marked absent, unmark them
+            if (absentIdx.includes(s.repIdx)) {
+                absentIdx = absentIdx.filter(i => i !== s.repIdx);
+            }
+        });
+
+        // 3. Build Lists
         let mainList = [];
         let extraList = [];
 
-        if (replacerIdx !== -1) {
-            extraList.push({ ...roster[replacerIdx], idx: replacerIdx });
-        }
+        // Build Extra List (Replacers)
+        replacersIdx.forEach(idx => {
+            extraList.push({ ...roster[idx], idx: idx });
+        });
 
+        // Build Main List
         roster.forEach((p, index) => {
-            if (index === replacerIdx) return; 
+            if (replacersIdx.includes(index)) return; // Already in extra
 
             if (groups.includes(p.group)) {
                 let status = 'Normal';
                 if (absentIdx.includes(index)) status = 'A';
-                else if (index === originalIdx) status = 'DC';
+                else if (dcOriginalsIdx.includes(index)) status = 'DC';
                 
                 mainList.push({ ...p, idx: index, status: status });
             }
         });
 
-        // 3. SORTING LOGIC
+        // 4. Sort Main List
         mainList.sort((a, b) => {
             if (a.current !== b.current) return a.current - b.current;
             if (a.lastWorked !== b.lastWorked) return a.lastWorked - b.lastWorked;
@@ -335,13 +347,7 @@
         
         document.getElementById('resultSection').style.display = 'block';
         const add = HOURS[shift];
-
-        // Helper for Badge
-        const getBadge = (role) => {
-            return role === 'Dr' 
-                ? `<span class="badge badge-dr">Driver</span>` 
-                : `<span class="badge badge-nd">Non-Dr</span>`;
-        };
+        const getBadge = (role) => role === 'Dr' ? `<span class="badge badge-dr">Driver</span>` : `<span class="badge badge-nd">Non-Dr</span>`;
 
         // MAIN TABLE
         let rankCounter = 1;
@@ -393,30 +399,37 @@
             extraBody.appendChild(tr);
         });
 
-        if(extraList.length === 0) extraBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No duty swaps.</td></tr>';
+        if(extraList.length === 0) extraBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No active swaps.</td></tr>';
     }
 
     function update(index, amount, isRefusal) {
         if (!confirm(`Update ${roster[index].name}?`)) return;
         roster[index].current += amount;
         roster[index].lastWorked = Date.now();
+        
+        // Auto-update Base Sequence
+        let tempRoster = [...roster].map((p, i) => ({ ...p, originalIdx: i }));
+        tempRoster.sort((a, b) => {
+            if (a.current !== b.current) return a.current - b.current;
+            if (a.lastWorked !== b.lastWorked) return a.lastWorked - b.lastWorked;
+            return a.baseRank - b.baseRank;
+        });
+        tempRoster.forEach((p, newRank) => {
+            roster[p.originalIdx].baseRank = newRank;
+        });
+
         save();
         generateList();
-        showMsg("Updated! List Re-sorted.");
+        showMsg("Updated! Sequence Modified.");
     }
 
-    // === IMPORT ===
+    // === UTILS ===
     function processBaseSequence() {
         const lines = document.getElementById('excelInput').value.split('\n');
         let count = 0;
         let unmatched = [];
 
-        // Reset hours
-        roster.forEach(p => {
-            p.current = 0;
-            p.lastWorked = 0;
-            p.baseRank = 999; 
-        });
+        roster.forEach(p => { p.current = 0; p.lastWorked = 0; p.baseRank = 999; });
 
         lines.forEach(line => {
             const parts = line.trim().split(/\t/);
@@ -442,7 +455,7 @@
 
     function hardReset() {
         if (confirm("DELETE ALL DATA?")) {
-            localStorage.removeItem('iocl_v11_data');
+            localStorage.removeItem('iocl_v13_data');
             location.reload();
         }
     }
