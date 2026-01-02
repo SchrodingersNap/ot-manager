@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL OT Manager (V4 Auto-Save)</title>
+    <title>IOCL OT Manager (V6 Final)</title>
     <style>
         :root { --primary: #0056b3; --bg: #f4f7f6; --text: #333; --card: #fff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 900px; margin: 0 auto; }
@@ -22,7 +22,7 @@
         .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: none; }
         .card.active { display: block; }
         
-        /* Grid Layout */
+        /* Layouts */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         
         /* Inputs */
@@ -33,15 +33,14 @@
         /* Buttons */
         button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1em; transition: 0.2s; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:active { transform: scale(0.98); }
         .btn-sec { background: #6c757d; color: white; }
         .btn-danger { background: #dc3545; color: white; }
         .btn-sm { width: auto; padding: 6px 12px; font-size: 0.85em; margin: 0; }
 
         /* Tables */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; padding: 10px; background: #f8f9fa; color: #666; font-size: 0.85em; }
-        td { padding: 12px 10px; border-bottom: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+        th { text-align: left; padding: 10px; background: #f8f9fa; color: #666; border-bottom: 2px solid #ddd; }
+        td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
         .dc-row { background: #fff3cd; }
         
         /* Badges */
@@ -57,13 +56,13 @@
 <body>
 
     <header>
-        <h1>✈️ IOCL OT Manager V4</h1>
-        <div class="subtitle">Auto-Sequencing | Monthly Reset Logic</div>
+        <h1>✈️ IOCL OT Manager V6</h1>
+        <div class="subtitle">Initial Sequence from Excel ➝ Starts at Zero</div>
     </header>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="showTab('daily')">Daily Operation</button>
-        <button class="tab-btn" onclick="showTab('setup')">Initial Setup (Excel)</button>
+        <button class="tab-btn" onclick="showTab('setup')">Month Start (Set Sequence)</button>
         <button class="tab-btn" onclick="showTab('roster')">Staff Database</button>
     </div>
 
@@ -104,10 +103,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width:50px">Rank</th>
+                        <th style="width:40px">Rank</th>
                         <th>Name</th>
                         <th>Grp</th>
-                        <th>Month Hrs</th>
+                        <th>Current Hrs</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -117,17 +116,16 @@
     </div>
 
     <div id="setup" class="card">
-        <h3>1. Establish Sequence</h3>
-        <p style="color:#666; font-size:0.9em;">Paste Excel data (Cols A-E) from the previous period. This sets the initial rank <strong>without</strong> increasing the current month's hours.</p>
+        <h3>1. New Month Setup</h3>
+        <p style="color:#666; font-size:0.9em;">
+            Paste last month's Excel data. The tool will:<br>
+            1. Calculate the ranking based on Excel.<br>
+            2. <strong>Set everyone's current hours to ZERO.</strong><br>
+            3. Use the calculated ranking as the starting order.
+        </p>
         <textarea id="excelInput" placeholder="Paste Excel data here..."></textarea>
-        <button class="btn-sec" onclick="processExcel()">Calculate Baseline Sequence</button>
+        <button class="btn-sec" onclick="processExcel()">Set Sequence & Reset to Zero</button>
         <div id="unmatchedList"></div>
-
-        <hr style="margin: 20px 0;">
-        
-        <h3>2. Month End</h3>
-        <p style="color:#666; font-size:0.9em;">Click this on the 1st of the month. It resets "Month Hrs" to 0 but keeps the sorting order.</p>
-        <button class="btn-sec" onclick="startNewMonth()">Start New Month (Preserve Order)</button>
         
         <button class="btn-danger" onclick="hardReset()" style="margin-top: 30px;">⚠️ Factory Reset (Delete All)</button>
     </div>
@@ -140,8 +138,8 @@
                 <tr>
                     <th>Official Name</th>
                     <th>Group</th>
-                    <th>Current</th>
-                    <th>History</th>
+                    <th>Current Hrs</th>
+                    <th>Base Rank</th>
                 </tr>
             </thead>
             <tbody id="dbBody"></tbody>
@@ -151,105 +149,61 @@
     <div id="statusMsg"></div>
 
 <script>
-    // === CONFIG ===
     const HOURS = { 'A': 6, 'B': 8, 'C': 10 };
     
-    // === ROSTER DATA ===
-    // 'current': Hours worked THIS month (Visible)
-    // 'history': Hours from Excel/Past months (Hidden sorter)
+    // Default Roster (V6 with Sunit included)
     const defaultRoster = [
-        // GROUP 1
-        { name: "Bidhan Deb Barma", group: 1 },
-        { name: "Sanjay Paul", group: 1 },
-        { name: "Gourab Biswas", group: 1 },
-        { name: "Pardeep .", group: 1 },
-        { name: "Mrityunjoy Saha", group: 1 },
-        { name: "Pradip Kumar Mondal", group: 1 },
-        { name: "Pramod Kumar Meena", group: 1 },
-        { name: "Sunit Kumar Das", group: 1 }, // Added Sunit
-
-        // GROUP 2
-        { name: "Pankaj Chowdhury", group: 2 },
-        { name: "PARTHA ROY", group: 2 },
-        { name: "Mukesh Swami", group: 2 },
-        { name: "Joydeb Mandal", group: 2 },
-        { name: "Abhisake Chandan Tirkey", group: 2 },
-        { name: "Kingsuk Burman", group: 2 },
-        { name: "Shibendu Dutta", group: 2 },
-        { name: "Rajib Kumar Paul", group: 2 },
-
-        // GROUP 3
-        { name: "Rajendra Kumar", group: 3 },
-        { name: "Amit Kumar", group: 3 },
-        { name: "VARASALA AMBEDKAR", group: 3 },
-        { name: "Vikas Chhikara", group: 3 },
-        { name: "DIPANKAR DEY", group: 3 },
-        { name: "Sanjib Kumar Mondal", group: 3 },
-        { name: "Sukumar Maji", group: 3 },
-        { name: "Alok Roy", group: 3 },
+        { name: "Bidhan Deb Barma", group: 1 }, { name: "Sanjay Paul", group: 1 },
+        { name: "Gourab Biswas", group: 1 }, { name: "Pardeep .", group: 1 },
+        { name: "Mrityunjoy Saha", group: 1 }, { name: "Pradip Kumar Mondal", group: 1 },
+        { name: "Pramod Kumar Meena", group: 1 }, { name: "Sunit Kumar Das", group: 1 },
+        { name: "Pankaj Chowdhury", group: 2 }, { name: "PARTHA ROY", group: 2 },
+        { name: "Mukesh Swami", group: 2 }, { name: "Joydeb Mandal", group: 2 },
+        { name: "Abhisake Chandan Tirkey", group: 2 }, { name: "Kingsuk Burman", group: 2 },
+        { name: "Shibendu Dutta", group: 2 }, { name: "Rajib Kumar Paul", group: 2 },
+        { name: "Rajendra Kumar", group: 3 }, { name: "Amit Kumar", group: 3 },
+        { name: "VARASALA AMBEDKAR", group: 3 }, { name: "Vikas Chhikara", group: 3 },
+        { name: "DIPANKAR DEY", group: 3 }, { name: "Sanjib Kumar Mondal", group: 3 },
+        { name: "Sukumar Maji", group: 3 }, { name: "Alok Roy", group: 3 },
         { name: "Pradip Karmakar", group: 3 },
-
-        // GROUP 4
-        { name: "Mohit", group: 4 },
-        { name: "Jitender .", group: 4 },
-        { name: "Subhra Jyoti Banerjee", group: 4 },
-        { name: "Tej Singh Meena", group: 4 },
-        { name: "Sarbeswar Hembram", group: 4 },
-        { name: "RAJIB SEN", group: 4 },
-        { name: "Gopal Howli", group: 4 },
-        { name: "Kalyan Mondal", group: 4 },
-
-        // GROUP 5
-        { name: "Chandra Nath Mitra", group: 5 },
-        { name: "Sudhir .", group: 5 },
-        { name: "Manjeet .", group: 5 },
-        { name: "Somenath Mandal", group: 5 },
-        { name: "BISWARUP CHAKRABORTY", group: 5 },
-        { name: "Ashok Dasgupta", group: 5 },
-        { name: "Sanjay Dey", group: 5 },
-        { name: "Sanjit Mondal", group: 5 },
-
-        // GROUP 6
-        { name: "Subhajit Saha", group: 6 },
-        { name: "Soumen Mondal", group: 6 },
-        { name: "Naveen .", group: 6 },
-        { name: "Shyamal Kumar Ghosh", group: 6 },
-        { name: "Dhirendar Kumar", group: 6 },
-        { name: "Soumalaya", group: 6 },
-
-        // GROUP 7
-        { name: "Azam Ali", group: 7 },
-        { name: "Nitin Kumar", group: 7 },
-        { name: "Anil Kumar", group: 7 },
-        { name: "Goutam Patra", group: 7 },
-        { name: "PALLAB KR. SAHA", group: 7 },
-        { name: "SK. SABIR AHMED", group: 7 },
-        { name: "SOMENATH DAS", group: 7 },
-        { name: "Hemlal Sharma", group: 7 }
+        { name: "Mohit", group: 4 }, { name: "Jitender .", group: 4 },
+        { name: "Subhra Jyoti Banerjee", group: 4 }, { name: "Tej Singh Meena", group: 4 },
+        { name: "Sarbeswar Hembram", group: 4 }, { name: "RAJIB SEN", group: 4 },
+        { name: "Gopal Howli", group: 4 }, { name: "Kalyan Mondal", group: 4 },
+        { name: "Chandra Nath Mitra", group: 5 }, { name: "Sudhir .", group: 5 },
+        { name: "Manjeet .", group: 5 }, { name: "Somenath Mandal", group: 5 },
+        { name: "BISWARUP CHAKRABORTY", group: 5 }, { name: "Ashok Dasgupta", group: 5 },
+        { name: "Sanjay Dey", group: 5 }, { name: "Sanjit Mondal", group: 5 },
+        { name: "Subhajit Saha", group: 6 }, { name: "Soumen Mondal", group: 6 },
+        { name: "Naveen .", group: 6 }, { name: "Shyamal Kumar Ghosh", group: 6 },
+        { name: "Dhirendar Kumar", group: 6 }, { name: "Soumalaya", group: 6 },
+        { name: "Azam Ali", group: 7 }, { name: "Nitin Kumar", group: 7 },
+        { name: "Anil Kumar", group: 7 }, { name: "Goutam Patra", group: 7 },
+        { name: "PALLAB KR. SAHA", group: 7 }, { name: "SK. SABIR AHMED", group: 7 },
+        { name: "SOMENATH DAS", group: 7 }, { name: "Hemlal Sharma", group: 7 }
     ];
 
     let roster = [];
 
-    // === INITIALIZATION ===
+    // === INIT ===
     window.onload = () => {
-        // Load existing data or create new
-        const saved = localStorage.getItem('iocl_v4_data');
+        const saved = localStorage.getItem('iocl_v6_data');
         if (saved) {
             roster = JSON.parse(saved);
         } else {
-            // Initialize with 0
-            roster = defaultRoster.map(p => ({ ...p, current: 0, history: 0 }));
+            // Init: Default rank is just their array index
+            roster = defaultRoster.map((p, i) => ({ ...p, current: 0, baseRank: i }));
             save();
         }
         renderDB();
     };
 
     function save() {
-        localStorage.setItem('iocl_v4_data', JSON.stringify(roster));
+        localStorage.setItem('iocl_v6_data', JSON.stringify(roster));
         renderDB();
     }
 
-    // === DAILY LOGIC ===
+    // === CORE LOGIC ===
     function generateList() {
         const groups = document.getElementById('dutyInput').value.split(/[\s,]+/).map(Number).filter(n => n > 0);
         const shift = document.getElementById('shiftInput').value;
@@ -257,14 +211,14 @@
         const repName = document.getElementById('swapReplacer').value;
         const orgName = document.getElementById('swapOriginal').value;
 
-        // Find Absentees Indices
+        // 1. Mark Absentees
         let absentIdx = [];
         absentees.forEach(a => {
             const p = findPerson(a);
             if(p) absentIdx.push(p.index);
         });
 
-        // Handle Swap (Original is absent)
+        // 2. Handle Swap (Original is Absent)
         if (orgName) {
             const org = findPerson(orgName);
             if (org) absentIdx.push(org.index);
@@ -273,30 +227,38 @@
         let list = [];
         let replacer = null;
 
-        // Handle Swap (Replacer)
+        // 3. Handle Swap (Replacer)
         if (repName) {
             const rep = findPerson(repName);
             if (rep) {
-                // Ensure replacer isn't marked absent
+                // If Replacer was marked absent, unmark them
                 absentIdx = absentIdx.filter(i => i !== rep.index);
+                // Create Replacer Object
                 replacer = { ...roster[rep.index], idx: rep.index, isDC: true };
             }
         }
 
-        // Build Main List
+        // 4. Build List
         roster.forEach((p, index) => {
             if (absentIdx.includes(index)) return;
-            if (replacer && replacer.name === p.name) return; // Skip replacer, add later
+            if (replacer && replacer.name === p.name) return; // Skip replacer for now
 
             if (groups.includes(p.group)) {
                 list.push({ ...p, idx: index, isDC: false });
             }
         });
 
-        // Sorting Logic: Total = History + Current
-        list.sort((a, b) => (a.history + a.current) - (b.history + b.current));
+        // 5. SORTING LOGIC (The Core Requirement)
+        // Primary: Current Hours (Ascending)
+        // Tie-Breaker: Base Rank (Ascending)
+        list.sort((a, b) => {
+            if (a.current !== b.current) {
+                return a.current - b.current;
+            }
+            return a.baseRank - b.baseRank; // Use Excel sequence if hours are equal
+        });
 
-        // Append Replacer to bottom
+        // 6. Append Replacer to Bottom
         if (replacer) list.push(replacer);
 
         renderList(list, shift);
@@ -331,17 +293,19 @@
 
     function update(index, amount, isRefusal) {
         if (!confirm(`Confirm Update for ${roster[index].name}?`)) return;
-        
-        // Add to CURRENT month hours
+        // Adds to current hours. This will change their position in the sorting order next time.
         roster[index].current += amount;
         save();
-        generateList(); // Refresh view
+        generateList();
         showMsg("Hours updated successfully");
     }
 
-    // === EXCEL LOGIC ===
+    // === MONTH START / EXCEL LOGIC ===
     function processExcel() {
         const lines = document.getElementById('excelInput').value.split('\n');
+        
+        // 1. Temporary object to store excel hours for sorting
+        let excelTotals = roster.map((p, i) => ({ index: i, total: 0 }));
         let count = 0;
         let unmatched = [];
 
@@ -354,14 +318,22 @@
                 if (HOURS[shiftChar]) {
                     const match = findPerson(name);
                     if (match) {
-                        // Add to HISTORY (Baseline), not current
-                        roster[match.index].history += HOURS[shiftChar];
+                        excelTotals[match.index].total += HOURS[shiftChar];
                         count++;
                     } else {
                         unmatched.push(name);
                     }
                 }
             }
+        });
+
+        // 2. Sort everyone based on these Excel totals
+        excelTotals.sort((a, b) => a.total - b.total);
+
+        // 3. Assign new "Base Rank" and RESET hours
+        excelTotals.forEach((item, newRank) => {
+            roster[item.index].baseRank = newRank; // Store the Sequence
+            roster[item.index].current = 0;        // Reset Hours to Zero
         });
 
         save();
@@ -374,24 +346,12 @@
             errDiv.style.display = 'none';
         }
         
-        alert(`Sequence updated! ${count} records added to baseline history.`);
-    }
-
-    // === MONTH END LOGIC ===
-    function startNewMonth() {
-        if (!confirm("Start New Month? This will reset displayed hours to 0 but keep the sorting order.")) return;
-        
-        roster.forEach(p => {
-            p.history += p.current; // Move current to history
-            p.current = 0;          // Reset current
-        });
-        save();
-        showMsg("New Month Started!");
+        alert(`New Month Started!\n- ${count} Excel records processed.\n- Sequence Established.\n- All Current Hours reset to 0.`);
     }
 
     function hardReset() {
         if (confirm("DELETE ALL DATA? This cannot be undone.")) {
-            localStorage.removeItem('iocl_v4_data');
+            localStorage.removeItem('iocl_v6_data');
             location.reload();
         }
     }
@@ -399,10 +359,8 @@
     // === UTILS ===
     function findPerson(query) {
         query = query.toLowerCase().trim().replace(/\s+/g, ' ');
-        // 1. Exact
         let idx = roster.findIndex(p => p.name.toLowerCase() === query);
         if (idx !== -1) return { index: idx, ...roster[idx] };
-        // 2. Partial
         if (query.length > 3) {
             idx = roster.findIndex(p => p.name.toLowerCase().includes(query));
             if (idx !== -1) return { index: idx, ...roster[idx] };
@@ -425,7 +383,7 @@
         roster.forEach(p => {
             if (search && !p.name.toLowerCase().includes(search)) return;
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${p.name}</td><td>${p.group}</td><td>${p.current}</td><td>${p.history}</td>`;
+            tr.innerHTML = `<td>${p.name}</td><td>${p.group}</td><td>${p.current}</td><td>${p.baseRank}</td>`;
             tbody.appendChild(tr);
         });
     }
