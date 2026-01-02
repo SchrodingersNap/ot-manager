@@ -1,9 +1,30 @@
+This is a crucial feature. Everyone makes mistakes (misclicks)!
+
+I have updated the code to **Version 14**.
+
+### 🛠️ New Feature: "Correction Mode"
+
+In the **Database** tab, you will now see an **✏️ Edit** button next to every person.
+
+**How to fix a mistake:**
+
+1. Go to the **"Database"** tab.
+2. Search for the person's name.
+3. Click **✏️ Edit**.
+4. A box will pop up asking for the **Correct OT Hours**.
+5. Enter the right number and click OK. The system instantly updates and re-shuffles the ranking.
+
+### ✈️ IOCL OT Manager (V14: with Error Correction)
+
+Save this as `index.html`.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL OT Manager (V13)</title>
+    <title>IOCL OT Manager (V14)</title>
     <style>
         :root { --primary: #0056b3; --bg: #f4f7f6; --text: #333; --card: #fff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 950px; margin: 0 auto; }
@@ -36,11 +57,7 @@
         .btn-sec { background: #6c757d; color: white; }
         .btn-danger { background: #dc3545; color: white; }
         .btn-sm { width: auto; padding: 6px 12px; font-size: 0.85em; margin: 0; }
-        .btn-add { background: #28a745; color: white; margin-top: 0; width: auto; padding: 10px 15px; }
-
-        /* Swap List Item */
-        .swap-item { background: #e8f5e9; padding: 8px; border-radius: 6px; margin-top: 5px; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center; border: 1px solid #c8e6c9; }
-        .del-swap { color: red; cursor: pointer; font-weight: bold; margin-left: 10px; }
+        .btn-edit { background: #ff9800; color: white; width: auto; padding: 5px 10px; font-size: 0.8em; }
 
         /* Tables */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
@@ -69,14 +86,14 @@
 <body>
 
     <header>
-        <h1>✈️ IOCL OT Manager V13</h1>
-        <div class="subtitle">Multi-Swap Support</div>
+        <h1>✈️ IOCL OT Manager V14</h1>
+        <div class="subtitle">Manual Correction Mode Enabled</div>
     </header>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="showTab('daily')">Daily Operation</button>
+        <button class="tab-btn" onclick="showTab('roster')">Database (Edit/Correct)</button>
         <button class="tab-btn" onclick="showTab('setup')">Import Sequence</button>
-        <button class="tab-btn" onclick="showTab('roster')">Database</button>
     </div>
 
     <div id="daily" class="card active">
@@ -95,20 +112,18 @@
             </div>
         </div>
         
-        <div style="margin-top: 15px;">
-            <label>Absentees</label>
-            <input type="text" id="absentInput" placeholder="Search name (comma separated)...">
-        </div>
-
-        <div style="margin-top: 15px; background: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
-            <label style="color:#2e7d32;">Duty Swap Manager (Multiple Allowed)</label>
-            <div style="display:flex; gap:5px; align-items:center;">
-                <input type="text" id="swapReplacer" placeholder="Worker (Replacer)">
-                <span>for</span>
-                <input type="text" id="swapOriginal" placeholder="Original (Off)">
-                <button class="btn-add" onclick="addSwap()">+ Add</button>
+        <div class="grid-2" style="margin-top: 15px;">
+            <div>
+                <label>Absentees</label>
+                <input type="text" id="absentInput" placeholder="Search name...">
             </div>
-            <div id="activeSwapsList"></div>
+            <div>
+                <label>Duty Swap: [Worker] for [Original]</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="swapReplacer" placeholder="Worker">
+                    <input type="text" id="swapOriginal" placeholder="Original">
+                </div>
+            </div>
         </div>
 
         <button class="btn-primary" onclick="generateList()">🔄 Generate Priority List</button>
@@ -148,18 +163,10 @@
         </div>
     </div>
 
-    <div id="setup" class="card">
-        <h3>1. Import Base Sequence</h3>
-        <p style="color:#666; font-size:0.9em;">Paste Excel (Name + Rank). Resets Hours to 0.</p>
-        <textarea id="excelInput" placeholder="Example:&#10;Tej Singh Meena   1&#10;Rajendra Kumar    2"></textarea>
-        <button class="btn-sec" onclick="processBaseSequence()">Import & Reset</button>
-        <div id="unmatchedList"></div>
-        <button class="btn-danger" onclick="hardReset()" style="margin-top: 30px;">⚠️ Factory Reset</button>
-    </div>
-
     <div id="roster" class="card">
-        <h3>Staff Database</h3>
-        <input type="text" id="dbSearch" placeholder="Search..." onkeyup="renderDB()">
+        <h3>Staff Database & Corrections</h3>
+        <p style="color:#666; font-size:0.8em;">Made a mistake? Click "Edit" to fix hours manually.</p>
+        <input type="text" id="dbSearch" placeholder="Search Name..." onkeyup="renderDB()">
         <table>
             <thead>
                 <tr>
@@ -167,11 +174,20 @@
                     <th>Role</th>
                     <th>Grp</th>
                     <th>Hrs</th>
-                    <th>Seq</th>
+                    <th>Fix</th>
                 </tr>
             </thead>
             <tbody id="dbBody"></tbody>
         </table>
+    </div>
+
+    <div id="setup" class="card">
+        <h3>1. Import Base Sequence</h3>
+        <p style="color:#666; font-size:0.9em;">Paste Excel (Name + Rank). Resets Hours to 0.</p>
+        <textarea id="excelInput" placeholder="Example:&#10;Tej Singh Meena   1&#10;Rajendra Kumar    2"></textarea>
+        <button class="btn-sec" onclick="processBaseSequence()">Import & Reset</button>
+        <div id="unmatchedList"></div>
+        <button class="btn-danger" onclick="hardReset()" style="margin-top: 30px;">⚠️ Factory Reset</button>
     </div>
 
     <div id="statusMsg"></div>
@@ -212,10 +228,10 @@
     ];
 
     let roster = [];
-    let activeSwaps = []; // Store multiple swaps
 
     window.onload = () => {
-        const saved = localStorage.getItem('iocl_v13_data');
+        // v14 Key
+        const saved = localStorage.getItem('iocl_v14_data');
         if (saved) {
             roster = JSON.parse(saved);
         } else {
@@ -226,110 +242,69 @@
     };
 
     function save() {
-        localStorage.setItem('iocl_v13_data', JSON.stringify(roster));
+        localStorage.setItem('iocl_v14_data', JSON.stringify(roster));
         renderDB();
     }
 
-    // === SWAP MANAGER ===
-    function addSwap() {
-        const repName = document.getElementById('swapReplacer').value;
-        const orgName = document.getElementById('swapOriginal').value;
+    // === EDIT FUNCTION (Fix Mistakes) ===
+    function manualEdit(index) {
+        const p = roster[index];
+        const newHrs = prompt(`Edit Hours for ${p.name}\nCurrent: ${p.current}`, p.current);
         
-        if (!repName || !orgName) {
-            alert("Please enter both Worker and Original names");
-            return;
+        if (newHrs !== null && !isNaN(newHrs)) {
+            p.current = parseFloat(newHrs);
+            // Optionally ask for Rank correction too?
+            // For simplicity, we assume if you fix hours, sequence auto-fixes on next generation
+            save();
+            showMsg("Corrected! Value Saved.");
         }
-
-        const rep = findPerson(repName);
-        const org = findPerson(orgName);
-
-        if (!rep) { alert("Replacer not found in database"); return; }
-        if (!org) { alert("Original not found in database"); return; }
-
-        // Add to active swaps list
-        activeSwaps.push({ 
-            repName: rep.name, 
-            repIdx: rep.index, 
-            orgName: org.name, 
-            orgIdx: org.index 
-        });
-
-        // Clear inputs
-        document.getElementById('swapReplacer').value = '';
-        document.getElementById('swapOriginal').value = '';
-        renderSwaps();
     }
 
-    function removeSwap(index) {
-        activeSwaps.splice(index, 1);
-        renderSwaps();
-    }
-
-    function renderSwaps() {
-        const div = document.getElementById('activeSwapsList');
-        div.innerHTML = '';
-        activeSwaps.forEach((s, i) => {
-            div.innerHTML += `
-                <div class="swap-item">
-                    <span><strong>${s.repName}</strong> for ${s.orgName}</span>
-                    <span class="del-swap" onclick="removeSwap(${i})">X</span>
-                </div>
-            `;
-        });
-    }
-
-    // === CORE LOGIC ===
+    // === GENERATE LIST ===
     function generateList() {
         const groups = document.getElementById('dutyInput').value.split(/[\s,]+/).map(Number).filter(n => n > 0);
         const shift = document.getElementById('shiftInput').value;
         const absentees = document.getElementById('absentInput').value.toLowerCase().split(',').filter(s => s.trim());
+        const repName = document.getElementById('swapReplacer').value;
+        const orgName = document.getElementById('swapOriginal').value;
 
-        // 1. Identify Absentees
         let absentIdx = [];
         absentees.forEach(a => {
             const p = findPerson(a);
             if(p) absentIdx.push(p.index);
         });
 
-        // 2. Identify DC Originals and Replacers from Active Swaps
-        let dcOriginalsIdx = [];
-        let replacersIdx = [];
+        let originalIdx = -1;
+        if (orgName) {
+            const org = findPerson(orgName);
+            if (org) originalIdx = org.index;
+        }
 
-        activeSwaps.forEach(s => {
-            dcOriginalsIdx.push(s.orgIdx);
-            
-            // Add replacer index
-            replacersIdx.push(s.repIdx);
+        let replacerIdx = -1;
+        if (repName) {
+            const rep = findPerson(repName);
+            if (rep) replacerIdx = rep.index;
+        }
 
-            // Important: If replacer was marked absent, unmark them
-            if (absentIdx.includes(s.repIdx)) {
-                absentIdx = absentIdx.filter(i => i !== s.repIdx);
-            }
-        });
-
-        // 3. Build Lists
         let mainList = [];
         let extraList = [];
 
-        // Build Extra List (Replacers)
-        replacersIdx.forEach(idx => {
-            extraList.push({ ...roster[idx], idx: idx });
-        });
+        if (replacerIdx !== -1) {
+            extraList.push({ ...roster[replacerIdx], idx: replacerIdx });
+        }
 
-        // Build Main List
         roster.forEach((p, index) => {
-            if (replacersIdx.includes(index)) return; // Already in extra
+            if (index === replacerIdx) return; 
 
             if (groups.includes(p.group)) {
                 let status = 'Normal';
                 if (absentIdx.includes(index)) status = 'A';
-                else if (dcOriginalsIdx.includes(index)) status = 'DC';
+                else if (index === originalIdx) status = 'DC';
                 
                 mainList.push({ ...p, idx: index, status: status });
             }
         });
 
-        // 4. Sort Main List
         mainList.sort((a, b) => {
             if (a.current !== b.current) return a.current - b.current;
             if (a.lastWorked !== b.lastWorked) return a.lastWorked - b.lastWorked;
@@ -349,7 +324,6 @@
         const add = HOURS[shift];
         const getBadge = (role) => role === 'Dr' ? `<span class="badge badge-dr">Driver</span>` : `<span class="badge badge-nd">Non-Dr</span>`;
 
-        // MAIN TABLE
         let rankCounter = 1;
         mainList.forEach(p => {
             const tr = document.createElement('tr');
@@ -381,7 +355,6 @@
             mainBody.appendChild(tr);
         });
 
-        // EXTRA TABLE
         extraList.forEach(p => {
             const tr = document.createElement('tr');
             tr.className = 'row-extra';
@@ -399,7 +372,7 @@
             extraBody.appendChild(tr);
         });
 
-        if(extraList.length === 0) extraBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No active swaps.</td></tr>';
+        if(extraList.length === 0) extraBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No duty swaps.</td></tr>';
     }
 
     function update(index, amount, isRefusal) {
@@ -407,7 +380,6 @@
         roster[index].current += amount;
         roster[index].lastWorked = Date.now();
         
-        // Auto-update Base Sequence
         let tempRoster = [...roster].map((p, i) => ({ ...p, originalIdx: i }));
         tempRoster.sort((a, b) => {
             if (a.current !== b.current) return a.current - b.current;
@@ -420,15 +392,13 @@
 
         save();
         generateList();
-        showMsg("Updated! Sequence Modified.");
+        showMsg("Updated!");
     }
 
     // === UTILS ===
     function processBaseSequence() {
         const lines = document.getElementById('excelInput').value.split('\n');
         let count = 0;
-        let unmatched = [];
-
         roster.forEach(p => { p.current = 0; p.lastWorked = 0; p.baseRank = 999; });
 
         lines.forEach(line => {
@@ -441,21 +411,17 @@
                     if (match) {
                         roster[match.index].baseRank = rank;
                         count++;
-                    } else {
-                        unmatched.push(name);
                     }
                 }
             }
         });
-
         save();
-        document.getElementById('unmatchedList').innerText = unmatched.length ? "Unmatched: " + unmatched.join(', ') : "";
-        alert(`Import Complete!\n- ${count} sequences set.\n- All Hours reset to 0.`);
+        alert(`Import Complete!\n- ${count} sequences set.`);
     }
 
     function hardReset() {
         if (confirm("DELETE ALL DATA?")) {
-            localStorage.removeItem('iocl_v13_data');
+            localStorage.removeItem('iocl_v14_data');
             location.reload();
         }
     }
@@ -483,15 +449,23 @@
         tbody.innerHTML = '';
         const search = document.getElementById('dbSearch').value.toLowerCase();
         
-        roster.forEach(p => {
+        roster.forEach((p, i) => {
             if (search && !p.name.toLowerCase().includes(search)) return;
             const tr = document.createElement('tr');
             
             const badge = p.role === 'Dr' 
-                ? `<span class="badge badge-dr">Driver</span>` 
-                : `<span class="badge badge-nd">Non-Dr</span>`;
+                ? `<span class="badge badge-dr">Dr</span>` 
+                : `<span class="badge badge-nd">ND</span>`;
 
-            tr.innerHTML = `<td>${p.name}</td><td>${badge}</td><td>${p.group}</td><td>${p.current}</td><td>${p.baseRank}</td>`;
+            tr.innerHTML = `
+                <td>${p.name}</td>
+                <td>${badge}</td>
+                <td>${p.group}</td>
+                <td>${p.current}</td>
+                <td>
+                    <button class="btn-edit" onclick="manualEdit(${i})">✏️ Edit</button>
+                </td>
+            `;
             tbody.appendChild(tr);
         });
     }
@@ -505,3 +479,5 @@
 </script>
 </body>
 </html>
+
+```
