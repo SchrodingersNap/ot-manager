@@ -1,36 +1,9 @@
-This code is updated with your **"Fresh Start"** logic.
-
-### 🆕 Key Features in this Update:
-
-1. **Zero Hour Start:** Everyone starts with **0 hours** by default (for the new year).
-2. **Excel Initializer:** You can paste the Excel data (like the 31st Dec roster you shared). The system will read the shifts (A/B/C) and **add the initial hours** (6/8/10) to those people to establish the first sequence.
-3. **Advanced Duty Change:** There is now a dedicated **"Duty Swap"** section where you enter **"Who is working"** (Replacer) and **"Who is off"** (Original).
-* The "Original" is automatically marked Absent.
-* The "Replacer" is added to the bottom of the list (Priority: Lowest).
-* If the Replacer works OT, the hours go to *their* name.
-
-
-
-### 📋 How to use for the First Time (Jan 1st Setup)
-
-1. **Paste the Code** and open it.
-2. Click **"Reset / Clear All"** to ensure everyone is at 0.
-3. **Paste your Excel Data** (from 31st Dec) into the text box.
-4. Click **"Calculate Initial Hours"**.
-* *This will give hours to the people who worked on the 31st, creating the starting order for Jan 1st.*
-
-
-5. Now you are ready to generate the list for Jan 1st.
-
-### The Code (`index.html`)
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL OT Manager (2026 Reset)</title>
+    <title>IOCL OT Manager (Jan 2026)</title>
     <style>
         :root { --primary: #0d47a1; --accent: #1976d2; --bg: #f4f6f8; --text: #333; }
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding: 20px; max-width: 1000px; margin: 0 auto; }
@@ -58,7 +31,7 @@ This code is updated with your **"Fresh Start"** logic.
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th { background: #e3f2fd; text-align: left; padding: 10px; font-size: 0.9em; text-transform: uppercase; color: #0d47a1; }
         td { padding: 10px; border-bottom: 1px solid #eee; }
-        tr.dc-row { background-color: #fff3e0; } /* Highlight for Duty Change */
+        tr.dc-row { background-color: #fff3e0; }
         
         .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; }
         .badge-dc { background: #ff9800; color: white; }
@@ -176,18 +149,17 @@ This code is updated with your **"Fresh Start"** logic.
     // === CONFIGURATION ===
     const SHIFT_HOURS = { 'A': 6, 'B': 8, 'C': 10 };
 
-    // === MASTER ROSTER (Official Names Map) ===
-    // 'name': Internal Short Name
-    // 'official': Name as it appears in Excel
+    // === MASTER ROSTER ===
     const defaultRoster = [
         // GROUP 1
         { name: "Bidhan", official: "Bidhan Deb Barma", group: 1, hours: 0 },
         { name: "S. Paul", official: "S. Paul", group: 1, hours: 0 },
         { name: "G. Biswas", official: "Gourab Biswas", group: 1, hours: 0 },
-        { name: "Pradeep", official: "Pradip Kumar Mondal", group: 1, hours: 0 },
+        { name: "Pradeep", official: "Pradip Kumar Mondal", group: 1, hours: 0 }, 
         { name: "M. Saha", official: "M. Saha", group: 1, hours: 0 },
-        { name: "P.K. Mondal", official: "P.K. Mondal", group: 1, hours: 0 },
+        { name: "P.K. Mondal", official: "Pradip Kumar Mondal", group: 1, hours: 0 }, // UPDATED HERE
         { name: "P.K. Meena", official: "P.K. Meena", group: 1, hours: 0 },
+
         // GROUP 2
         { name: "Pankaj", official: "Pankaj Choudhary", group: 2, hours: 0 },
         { name: "P. Roy", official: "Partha Roy", group: 2, hours: 0 },
@@ -197,6 +169,7 @@ This code is updated with your **"Fresh Start"** logic.
         { name: "Kingshuk", official: "Kingshuk Barman", group: 2, hours: 0 },
         { name: "S. Dutta", official: "S. Dutta", group: 2, hours: 0 },
         { name: "R.K. Paul", official: "Rajib Kumar Paul", group: 2, hours: 0 },
+
         // GROUP 3
         { name: "R. Kumar", official: "Rajendra Kumar", group: 3, hours: 0 },
         { name: "Amit", official: "Amit Kumar", group: 3, hours: 0 },
@@ -207,6 +180,7 @@ This code is updated with your **"Fresh Start"** logic.
         { name: "S. Maji", official: "Sukumar Maji", group: 3, hours: 0 },
         { name: "A.K. Roy", official: "A.K. Roy", group: 3, hours: 0 },
         { name: "P. Karmakar", official: "P. Karmakar", group: 3, hours: 0 },
+
         // GROUP 4
         { name: "Mohit", official: "Mohit", group: 4, hours: 0 },
         { name: "Jitender", official: "Jitender .", group: 4, hours: 0 },
@@ -216,6 +190,7 @@ This code is updated with your **"Fresh Start"** logic.
         { name: "Rajib Sen", official: "Rajib Sen", group: 4, hours: 0 },
         { name: "Gopal", official: "Gopal", group: 4, hours: 0 },
         { name: "Kalyan", official: "Kalyan Mondal", group: 4, hours: 0 },
+
         // GROUP 5
         { name: "C.N. Mitra", official: "C.N. Mitra", group: 5, hours: 0 },
         { name: "Sudhir", official: "Sudhir", group: 5, hours: 0 },
@@ -225,6 +200,7 @@ This code is updated with your **"Fresh Start"** logic.
         { name: "Ashok Dasgupta", official: "Ashok Dasgupta", group: 5, hours: 0 },
         { name: "Sanjay Dey", official: "Sanjay Dey", group: 5, hours: 0 },
         { name: "Sanjit", official: "Sanjit Mondal", group: 5, hours: 0 },
+
         // GROUP 6
         { name: "S. Saha", official: "S. Saha", group: 6, hours: 0 },
         { name: "Soumen", official: "Soumen Mondal", group: 6, hours: 0 },
@@ -232,6 +208,7 @@ This code is updated with your **"Fresh Start"** logic.
         { name: "S. Ghosh", official: "Shayaml Ghosh", group: 6, hours: 0 },
         { name: "Dhirendra", official: "Dhirendra", group: 6, hours: 0 },
         { name: "Soumalaya", official: "Soumalaya", group: 6, hours: 0 },
+
         // GROUP 7
         { name: "A. Ali", official: "A. Ali", group: 7, hours: 0 },
         { name: "Nitin", official: "Nitin", group: 7, hours: 0 },
@@ -247,37 +224,33 @@ This code is updated with your **"Fresh Start"** logic.
 
     // === STARTUP ===
     window.onload = function() {
-        const saved = localStorage.getItem('iocl_jan_2026');
+        const saved = localStorage.getItem('iocl_jan_2026_v2');
         if (saved) {
             roster = JSON.parse(saved);
         } else {
-            // Load default (All Zeros)
             roster = JSON.parse(JSON.stringify(defaultRoster));
         }
         renderRoster();
     };
 
     function saveData() {
-        localStorage.setItem('iocl_jan_2026', JSON.stringify(roster));
+        localStorage.setItem('iocl_jan_2026_v2', JSON.stringify(roster));
         renderRoster();
     }
 
     // === DAILY LOGIC ===
     function generateList() {
-        // 1. Get Settings
         const dutyGroups = document.getElementById('dutyGroups').value.split(/[\s,]+/).map(Number).filter(n=>n>0);
         const shiftType = document.getElementById('shiftType').value;
         const absenteesInput = document.getElementById('absentees').value.toLowerCase().split(',');
         
-        // 2. Duty Swap Inputs
         const replacerName = document.getElementById('dc_replacer').value.trim();
         const originalName = document.getElementById('dc_original').value.trim();
 
-        // 3. Build List
         let finalSequence = [];
-        
-        // Find indices for Absentees
         let absentIndices = [];
+
+        // Identify Absentees
         absenteesInput.forEach(txt => {
             if(txt.trim()) {
                 let match = findPerson(txt.trim());
@@ -285,38 +258,36 @@ This code is updated with your **"Fresh Start"** logic.
             }
         });
 
-        // Handle Duty Swap: Original is Absent, Replacer is DC
+        // Duty Swap: Original is Absent
         let replacerObj = null;
         if(originalName) {
             let orig = findPerson(originalName);
             if(orig) absentIndices.push(orig.index);
         }
+        
+        // Duty Swap: Replacer
         if(replacerName) {
             let rep = findPerson(replacerName);
             if(rep) {
-                // Check if replacer is already in duty group? 
-                // Logic: Even if replacer is from another group, we add them now.
+                // Check if replacer is listed as absent (e.g. mutual swap), remove from absent list
+                if(absentIndices.includes(rep.index)) {
+                    absentIndices = absentIndices.filter(i => i !== rep.index);
+                }
                 replacerObj = { ...roster[rep.index], isDC: true, originalIndex: rep.index };
             }
         }
 
-        // 4. Iterate Roster
         roster.forEach((p, idx) => {
-            // Skip Absentees
             if (absentIndices.includes(idx)) return;
-            // Skip Replacer here (we add them specifically as DC later to control order)
-            if (replacerObj && replacerObj.name === p.name) return;
+            if (replacerObj && replacerObj.name === p.name) return; // Add replacer later
 
-            // Normal Group Logic
             if (dutyGroups.includes(p.group)) {
                 finalSequence.push({ ...p, isDC: false, originalIndex: idx });
             }
         });
 
-        // Sort Normal Group by Hours
         finalSequence.sort((a, b) => a.hours - b.hours);
 
-        // Add Replacer at the BOTTOM (After group exhausted)
         if (replacerObj) {
             finalSequence.push(replacerObj);
         }
@@ -357,7 +328,7 @@ This code is updated with your **"Fresh Start"** logic.
         if(confirm(`Update ${p.name}?\n${p.hours} -> ${p.hours + amount}`)) {
             p.hours += amount;
             saveData();
-            generateList(); // Refresh
+            generateList(); 
         }
     }
 
@@ -368,9 +339,7 @@ This code is updated with your **"Fresh Start"** logic.
         let count = 0;
 
         lines.forEach(line => {
-            // Split by Tab or multiple spaces
             const parts = line.split(/\t/); 
-            // Expected: Code | Name | Desig | Date | Shift
             if(parts.length >= 2) {
                 const excelName = parts[1].trim();
                 const shiftChar = parts.length >= 5 ? parts[4].trim().toUpperCase() : '';
@@ -419,7 +388,6 @@ This code is updated with your **"Fresh Start"** logic.
     function switchTab(id) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('#daily, #init, #roster').forEach(d => d.classList.add('hidden'));
-        
         event.target.classList.add('active');
         document.getElementById(id).classList.remove('hidden');
     }
@@ -440,5 +408,3 @@ This code is updated with your **"Fresh Start"** logic.
 </script>
 </body>
 </html>
-
-```
