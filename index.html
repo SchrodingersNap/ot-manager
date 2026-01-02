@@ -1,3 +1,10 @@
+I have added **Sunit Kumar Das** to **Group 1** as requested.
+
+### ✈️ IOCL OT Manager (Updated Roster)
+
+Save this code as `index.html`.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -145,17 +152,16 @@
     const SHIFT_HOURS = { 'A': 6, 'B': 8, 'C': 10 };
 
     // === MASTER ROSTER ===
-    // Updated with official names from image_a5fdc9.png
     const defaultRoster = [
         // GROUP 1
         { name: "Bidhan", official: "Bidhan Deb Barma", group: 1, hours: 0 },
         { name: "S. Paul", official: "Sanjay Paul", group: 1, hours: 0 },
         { name: "G. Biswas", official: "Gourab Biswas", group: 1, hours: 0 },
-        { name: "Pradeep", official: "Pardeep .", group: 1, hours: 0 }, // Note spelling and dot
+        { name: "Pradeep", official: "Pardeep .", group: 1, hours: 0 },
         { name: "M. Saha", official: "Mrityunjoy Saha", group: 1, hours: 0 },
         { name: "P.K. Mondal", official: "Pradip Kumar Mondal", group: 1, hours: 0 },
         { name: "P.K. Meena", official: "Pramod Kumar Meena", group: 1, hours: 0 },
-        { name: "Sunit Kumar Das", official: "Sunit Kumar Das", group: 1, hours: 0 },
+        { name: "Sunit", official: "Sunit Kumar Das", group: 1, hours: 0 }, // ADDED HERE
 
         // GROUP 2
         { name: "Pankaj", official: "Pankaj Chowdhury", group: 2, hours: 0 },
@@ -179,7 +185,7 @@
         { name: "P. Karmakar", official: "Pradip Karmakar", group: 3, hours: 0 },
 
         // GROUP 4
-        { name: "Mohit", official: "Mohit", group: 4, hours: 0 }, // No match found in list, keeping short name
+        { name: "Mohit", official: "Mohit", group: 4, hours: 0 },
         { name: "Jitender", official: "Jitender .", group: 4, hours: 0 },
         { name: "S.J. Banerjee", official: "Subhra Jyoti Banerjee", group: 4, hours: 0 },
         { name: "T.S. Meena", official: "Tej Singh Meena", group: 4, hours: 0 },
@@ -192,19 +198,19 @@
         { name: "C.N. Mitra", official: "Chandra Nath Mitra", group: 5, hours: 0 },
         { name: "Sudhir", official: "Sudhir .", group: 5, hours: 0 },
         { name: "Manjeet", official: "Manjeet .", group: 5, hours: 0 },
-        { name: "Somnath Mondal", official: "Somenath Mandal", group: 5, hours: 0 }, // Spelling Somenath
+        { name: "Somnath Mondal", official: "Somenath Mandal", group: 5, hours: 0 },
         { name: "Biswarup", official: "BISWARUP CHAKRABORTY", group: 5, hours: 0 },
         { name: "Ashok Dasgupta", official: "Ashok Dasgupta", group: 5, hours: 0 },
-        { name: "Sanjay Dey", official: "Sanjay Dey", group: 5, hours: 0 }, // No match found, keeping short name
+        { name: "Sanjay Dey", official: "Sanjay Dey", group: 5, hours: 0 },
         { name: "Sanjit", official: "Sanjit Mondal", group: 5, hours: 0 },
 
         // GROUP 6
         { name: "S. Saha", official: "Subhajit Saha", group: 6, hours: 0 },
         { name: "Soumen", official: "Soumen Mondal", group: 6, hours: 0 },
         { name: "Naveen", official: "Naveen .", group: 6, hours: 0 },
-        { name: "S. Ghosh", official: "Shyamal Kumar Ghosh", group: 6, hours: 0 },
+        { name: "S. Ghosh", official: "Shayamal Kumar Ghosh", group: 6, hours: 0 },
         { name: "Dhirendra", official: "Dhirendar Kumar", group: 6, hours: 0 },
-        { name: "Soumalaya", official: "Soumalaya", group: 6, hours: 0 }, // No match found, keeping short name
+        { name: "Soumalaya", official: "Soumalaya", group: 6, hours: 0 },
 
         // GROUP 7
         { name: "A. Ali", official: "Azam Ali", group: 7, hours: 0 },
@@ -221,7 +227,8 @@
 
     // === STARTUP ===
     window.onload = function() {
-        const saved = localStorage.getItem('iocl_jan_2026_final_names');
+        // Updated storage key to force new roster load
+        const saved = localStorage.getItem('iocl_jan_2026_final_v2');
         if (saved) {
             roster = JSON.parse(saved);
         } else {
@@ -231,7 +238,7 @@
     };
 
     function saveData() {
-        localStorage.setItem('iocl_jan_2026_final_names', JSON.stringify(roster));
+        localStorage.setItem('iocl_jan_2026_final_v2', JSON.stringify(roster));
         renderRoster();
     }
 
@@ -384,8 +391,6 @@
         if(idx !== -1) return { index: idx, ...roster[idx] };
 
         // 3. Partial Match (Official contains query OR Query contains Official)
-        // Note: Strict partial match to avoid false positives (e.g. "Kumar" matching everyone)
-        // Only if query length > 3
         if (query.length > 3) {
              idx = roster.findIndex(p => p.official.toLowerCase().includes(query) || query.includes(p.official.toLowerCase()));
              if(idx !== -1) return { index: idx, ...roster[idx] };
@@ -424,3 +429,5 @@
 </script>
 </body>
 </html>
+
+```
