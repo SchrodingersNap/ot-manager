@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL OT Manager (Jan 2026)</title>
+    <title>IOCL OT Manager (Official List)</title>
     <style>
         :root { --primary: #0d47a1; --accent: #1976d2; --bg: #f4f6f8; --text: #333; }
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding: 20px; max-width: 1000px; margin: 0 auto; }
@@ -11,23 +11,19 @@
         h1 { color: var(--primary); margin-bottom: 5px; }
         .subtitle { color: #666; font-size: 0.9em; margin-bottom: 20px; }
         
-        /* Containers */
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; border-left: 5px solid var(--accent); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         
-        /* Inputs */
         label { font-weight: bold; font-size: 0.85em; display: block; margin-bottom: 5px; color: #555; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em; }
-        textarea { height: 100px; font-family: monospace; font-size: 0.85em; }
+        textarea { height: 120px; font-family: monospace; font-size: 0.85em; }
         
-        /* Buttons */
         button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
         button:hover { background: #002171; }
         button.secondary { background: #757575; }
         button.danger { background: #d32f2f; }
         button.action-btn { width: auto; padding: 5px 10px; font-size: 0.8em; margin-right: 5px; }
         
-        /* Table */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th { background: #e3f2fd; text-align: left; padding: 10px; font-size: 0.9em; text-transform: uppercase; color: #0d47a1; }
         td { padding: 10px; border-bottom: 1px solid #eee; }
@@ -36,8 +32,8 @@
         .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; }
         .badge-dc { background: #ff9800; color: white; }
         .badge-grp { background: #e0e0e0; color: #333; }
+        .error-log { color: #d32f2f; background: #ffebee; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 0.9em; display: none; }
 
-        /* Tabs */
         .tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
         .tab { padding: 10px 20px; cursor: pointer; color: #666; font-weight: bold; }
         .tab.active { border-bottom: 3px solid var(--primary); color: var(--primary); }
@@ -47,8 +43,8 @@
 <body>
 
     <header>
-        <h1>✈️ IOCL OT Manager (Jan 2026)</h1>
-        <div class="subtitle">Zero-Base Start with Excel Calculation Logic</div>
+        <h1>✈️ IOCL OT Manager (Official List)</h1>
+        <div class="subtitle">Zero-Base Start | Exact Name Matching</div>
     </header>
 
     <div class="tabs">
@@ -82,13 +78,12 @@
                     <input type="text" id="absentees" placeholder="Name 1, Name 2...">
                 </div>
                 <div>
-                    <label>Duty Swap: [Who is Working] for [Who is Off]</label>
+                    <label>Duty Swap: [Worker] for [Absentee]</label>
                     <div style="display: flex; gap: 5px;">
-                        <input type="text" id="dc_replacer" placeholder="Worker (Replacer)">
+                        <input type="text" id="dc_replacer" placeholder="Who is Working?">
                         <span style="padding-top:10px">for</span>
-                        <input type="text" id="dc_original" placeholder="Original (Off)">
+                        <input type="text" id="dc_original" placeholder="Who is Off?">
                     </div>
-                    <small style="color: #666;">* Worker goes to bottom of list. Original is marked absent.</small>
                 </div>
             </div>
 
@@ -116,12 +111,13 @@
     <div id="init" class="hidden">
         <div class="card">
             <h3>Initial Calculation (Reset Mode)</h3>
-            <p>Paste the Excel data (e.g. from 31st Dec) to calculate the starting hours for the sequence.</p>
-            <label>Paste Excel Data (Column A to E):</label>
-            <textarea id="excelPaste" placeholder="513748  Tej Singh Meena   OPTR   31-12-2025   B&#10;503538  Rajendra Kumar    JR.C   31-12-2025   C"></textarea>
+            <p>Paste the Excel data (Cols A-E) to calculate total hours.</p>
+            <textarea id="excelPaste" placeholder="513748  Tej Singh Meena   OPTR   31-12-2025   B&#10;703085  Pradip Kumar Mondal SR.FMN 31-12-2025   C"></textarea>
             
             <br><br>
             <button class="secondary" onclick="calculateFromExcel()">Calculate & Add Hours</button>
+            <div id="errorLog" class="error-log"></div>
+            
             <br><br>
             <button class="danger" onclick="resetAllZero()">⚠️ Reset Everyone to ZERO</button>
         </div>
@@ -146,77 +142,77 @@
     </div>
 
 <script>
-    // === CONFIGURATION ===
     const SHIFT_HOURS = { 'A': 6, 'B': 8, 'C': 10 };
 
     // === MASTER ROSTER ===
+    // Updated with official names from image_a5fdc9.png
     const defaultRoster = [
         // GROUP 1
         { name: "Bidhan", official: "Bidhan Deb Barma", group: 1, hours: 0 },
-        { name: "S. Paul", official: "S. Paul", group: 1, hours: 0 },
+        { name: "S. Paul", official: "Sanjay Paul", group: 1, hours: 0 },
         { name: "G. Biswas", official: "Gourab Biswas", group: 1, hours: 0 },
-        { name: "Pradeep", official: "Pradip Kumar Mondal", group: 1, hours: 0 }, 
-        { name: "M. Saha", official: "M. Saha", group: 1, hours: 0 },
-        { name: "P.K. Mondal", official: "Pradip Kumar Mondal", group: 1, hours: 0 }, // UPDATED HERE
-        { name: "P.K. Meena", official: "P.K. Meena", group: 1, hours: 0 },
+        { name: "Pradeep", official: "Pardeep .", group: 1, hours: 0 }, // Note spelling and dot
+        { name: "M. Saha", official: "Mrityunjoy Saha", group: 1, hours: 0 },
+        { name: "P.K. Mondal", official: "Pradip Kumar Mondal", group: 1, hours: 0 },
+        { name: "P.K. Meena", official: "Pramod Kumar Meena", group: 1, hours: 0 },
 
         // GROUP 2
-        { name: "Pankaj", official: "Pankaj Choudhary", group: 2, hours: 0 },
-        { name: "P. Roy", official: "Partha Roy", group: 2, hours: 0 },
+        { name: "Pankaj", official: "Pankaj Chowdhury", group: 2, hours: 0 },
+        { name: "P. Roy", official: "PARTHA ROY", group: 2, hours: 0 },
         { name: "M. Swami", official: "Mukesh Swami", group: 2, hours: 0 },
         { name: "Joydeb", official: "Joydeb Mandal", group: 2, hours: 0 },
-        { name: "A.C. Tirkey", official: "A.C. Tirkey", group: 2, hours: 0 },
-        { name: "Kingshuk", official: "Kingshuk Barman", group: 2, hours: 0 },
-        { name: "S. Dutta", official: "S. Dutta", group: 2, hours: 0 },
+        { name: "A.C. Tirkey", official: "Abhisake Chandan Tirkey", group: 2, hours: 0 },
+        { name: "Kingshuk", official: "Kingsuk Burman", group: 2, hours: 0 },
+        { name: "S. Dutta", official: "Shibendu Dutta", group: 2, hours: 0 },
         { name: "R.K. Paul", official: "Rajib Kumar Paul", group: 2, hours: 0 },
 
         // GROUP 3
         { name: "R. Kumar", official: "Rajendra Kumar", group: 3, hours: 0 },
         { name: "Amit", official: "Amit Kumar", group: 3, hours: 0 },
-        { name: "V. Ambedkar", official: "Varasala Ambedkar", group: 3, hours: 0 },
+        { name: "V. Ambedkar", official: "VARASALA AMBEDKAR", group: 3, hours: 0 },
         { name: "Vikas", official: "Vikas Chhikara", group: 3, hours: 0 },
-        { name: "D. Dey", official: "D. Dey", group: 3, hours: 0 },
-        { name: "S.K. Mondal", official: "S.K. Mondal", group: 3, hours: 0 },
+        { name: "D. Dey", official: "DIPANKAR DEY", group: 3, hours: 0 },
+        { name: "S.K. Mondal", official: "Sanjib Kumar Mondal", group: 3, hours: 0 },
         { name: "S. Maji", official: "Sukumar Maji", group: 3, hours: 0 },
-        { name: "A.K. Roy", official: "A.K. Roy", group: 3, hours: 0 },
-        { name: "P. Karmakar", official: "P. Karmakar", group: 3, hours: 0 },
+        { name: "A.K. Roy", official: "Alok Roy", group: 3, hours: 0 },
+        { name: "P. Karmakar", official: "Pradip Karmakar", group: 3, hours: 0 },
 
         // GROUP 4
-        { name: "Mohit", official: "Mohit", group: 4, hours: 0 },
+        { name: "Mohit", official: "Mohit", group: 4, hours: 0 }, // No match found in list, keeping short name
         { name: "Jitender", official: "Jitender .", group: 4, hours: 0 },
         { name: "S.J. Banerjee", official: "Subhra Jyoti Banerjee", group: 4, hours: 0 },
         { name: "T.S. Meena", official: "Tej Singh Meena", group: 4, hours: 0 },
-        { name: "S. Hembram", official: "S. Hembram", group: 4, hours: 0 },
-        { name: "Rajib Sen", official: "Rajib Sen", group: 4, hours: 0 },
-        { name: "Gopal", official: "Gopal", group: 4, hours: 0 },
+        { name: "S. Hembram", official: "Sarbeswar Hembram", group: 4, hours: 0 },
+        { name: "Rajib Sen", official: "RAJIB SEN", group: 4, hours: 0 },
+        { name: "Gopal", official: "Gopal Howli", group: 4, hours: 0 },
         { name: "Kalyan", official: "Kalyan Mondal", group: 4, hours: 0 },
 
         // GROUP 5
-        { name: "C.N. Mitra", official: "C.N. Mitra", group: 5, hours: 0 },
-        { name: "Sudhir", official: "Sudhir", group: 5, hours: 0 },
+        { name: "C.N. Mitra", official: "Chandra Nath Mitra", group: 5, hours: 0 },
+        { name: "Sudhir", official: "Sudhir .", group: 5, hours: 0 },
         { name: "Manjeet", official: "Manjeet .", group: 5, hours: 0 },
-        { name: "Somnath Mondal", official: "Somnath Mondal", group: 5, hours: 0 },
-        { name: "Biswarup", official: "Biswarup", group: 5, hours: 0 },
+        { name: "Somnath Mondal", official: "Somenath Mandal", group: 5, hours: 0 }, // Spelling Somenath
+        { name: "Biswarup", official: "BISWARUP CHAKRABORTY", group: 5, hours: 0 },
         { name: "Ashok Dasgupta", official: "Ashok Dasgupta", group: 5, hours: 0 },
-        { name: "Sanjay Dey", official: "Sanjay Dey", group: 5, hours: 0 },
+        { name: "Sanjay Dey", official: "Sanjay Dey", group: 5, hours: 0 }, // No match found, keeping short name
         { name: "Sanjit", official: "Sanjit Mondal", group: 5, hours: 0 },
 
         // GROUP 6
-        { name: "S. Saha", official: "S. Saha", group: 6, hours: 0 },
+        { name: "S. Saha", official: "Subhajit Saha", group: 6, hours: 0 },
         { name: "Soumen", official: "Soumen Mondal", group: 6, hours: 0 },
-        { name: "Naveen", official: "Naveen", group: 6, hours: 0 },
-        { name: "S. Ghosh", official: "Shayaml Ghosh", group: 6, hours: 0 },
-        { name: "Dhirendra", official: "Dhirendra", group: 6, hours: 0 },
-        { name: "Soumalaya", official: "Soumalaya", group: 6, hours: 0 },
+        { name: "Naveen", official: "Naveen .", group: 6, hours: 0 },
+        { name: "S. Ghosh", official: "Shyamal Kumar Ghosh", group: 6, hours: 0 },
+        { name: "Dhirendra", official: "Dhirendar Kumar", group: 6, hours: 0 },
+        { name: "Soumalaya", official: "Soumalaya", group: 6, hours: 0 }, // No match found, keeping short name
 
         // GROUP 7
-        { name: "A. Ali", official: "A. Ali", group: 7, hours: 0 },
-        { name: "Nitin", official: "Nitin", group: 7, hours: 0 },
-        { name: "Anil", official: "Anil", group: 7, hours: 0 },
-        { name: "G. Patra", official: "G. Patra", group: 7, hours: 0 },
-        { name: "P.K. Saha", official: "P.K. Saha", group: 7, hours: 0 },
-        { name: "Sabir Ahmed", official: "Sabir Ahmed", group: 7, hours: 0 },
-        { name: "Somnath Das", official: "Somnath Das", group: 7, hours: 0 },
+        { name: "A. Ali", official: "Azam Ali", group: 7, hours: 0 },
+        { name: "Nitin", official: "Nitin Kumar", group: 7, hours: 0 },
+        { name: "Anil", official: "Anil Kumar", group: 7, hours: 0 },
+        { name: "G. Patra", official: "Goutam Patra", group: 7, hours: 0 },
+        { name: "P.K. Saha", official: "PALLAB KR. SAHA", group: 7, hours: 0 },
+        { name: "Sabir Ahmed", official: "SK. SABIR AHMED", group: 7, hours: 0 },
+        { name: "Somnath Das", official: "SOMENATH DAS", group: 7, hours: 0 },
         { name: "Hemlal Sharma", official: "Hemlal Sharma", group: 7, hours: 0 }
     ];
 
@@ -224,7 +220,7 @@
 
     // === STARTUP ===
     window.onload = function() {
-        const saved = localStorage.getItem('iocl_jan_2026_v2');
+        const saved = localStorage.getItem('iocl_jan_2026_final_names');
         if (saved) {
             roster = JSON.parse(saved);
         } else {
@@ -234,7 +230,7 @@
     };
 
     function saveData() {
-        localStorage.setItem('iocl_jan_2026_v2', JSON.stringify(roster));
+        localStorage.setItem('iocl_jan_2026_final_names', JSON.stringify(roster));
         renderRoster();
     }
 
@@ -259,17 +255,17 @@
         });
 
         // Duty Swap: Original is Absent
-        let replacerObj = null;
         if(originalName) {
             let orig = findPerson(originalName);
             if(orig) absentIndices.push(orig.index);
         }
         
         // Duty Swap: Replacer
+        let replacerObj = null;
         if(replacerName) {
             let rep = findPerson(replacerName);
             if(rep) {
-                // Check if replacer is listed as absent (e.g. mutual swap), remove from absent list
+                // If replacer was marked absent, unmark them
                 if(absentIndices.includes(rep.index)) {
                     absentIndices = absentIndices.filter(i => i !== rep.index);
                 }
@@ -279,7 +275,7 @@
 
         roster.forEach((p, idx) => {
             if (absentIndices.includes(idx)) return;
-            if (replacerObj && replacerObj.name === p.name) return; // Add replacer later
+            if (replacerObj && replacerObj.name === p.name) return; 
 
             if (dutyGroups.includes(p.group)) {
                 finalSequence.push({ ...p, isDC: false, originalIndex: idx });
@@ -325,7 +321,7 @@
 
     function updateHours(idx, amount, isRefusal) {
         const p = roster[idx];
-        if(confirm(`Update ${p.name}?\n${p.hours} -> ${p.hours + amount}`)) {
+        if(confirm(`Update ${p.official}?\n${p.hours} -> ${p.hours + amount}`)) {
             p.hours += amount;
             saveData();
             generateList(); 
@@ -337,9 +333,11 @@
         const text = document.getElementById('excelPaste').value;
         const lines = text.split('\n');
         let count = 0;
+        let unmatched = [];
 
         lines.forEach(line => {
             const parts = line.split(/\t/); 
+            // Format: Code | Name | Desig | Date | Shift
             if(parts.length >= 2) {
                 const excelName = parts[1].trim();
                 const shiftChar = parts.length >= 5 ? parts[4].trim().toUpperCase() : '';
@@ -351,35 +349,52 @@
                     if (match) {
                         roster[match.index].hours += hrs;
                         count++;
+                    } else {
+                        unmatched.push(excelName);
                     }
                 }
             }
         });
         
         saveData();
-        alert(`Processed ${count} entries. Initial hours updated.`);
+        
+        // Error Reporting
+        const logDiv = document.getElementById('errorLog');
+        if (unmatched.length > 0) {
+            logDiv.style.display = 'block';
+            logDiv.innerHTML = `<strong>⚠️ ${unmatched.length} unmatched names (Hours not added):</strong><br>` + unmatched.join(', ');
+        } else {
+            logDiv.style.display = 'none';
+        }
+        
+        alert(`Processed ${count} entries successfully.`);
     }
 
     // === UTILITIES ===
     function findPerson(query) {
-        query = query.toLowerCase();
-        // 1. Exact Official
+        query = query.toLowerCase().trim();
+        
+        // 1. Exact Official Match
         let idx = roster.findIndex(p => p.official.toLowerCase() === query);
         if(idx !== -1) return { index: idx, ...roster[idx] };
         
-        // 2. Contains Official
-        idx = roster.findIndex(p => p.official.toLowerCase().includes(query) || query.includes(p.official.toLowerCase()));
+        // 2. Exact Internal ID Match
+        idx = roster.findIndex(p => p.name.toLowerCase() === query);
         if(idx !== -1) return { index: idx, ...roster[idx] };
 
-        // 3. Internal Name
-        idx = roster.findIndex(p => p.name.toLowerCase().includes(query));
-        if(idx !== -1) return { index: idx, ...roster[idx] };
-        
+        // 3. Partial Match (Official contains query OR Query contains Official)
+        // Note: Strict partial match to avoid false positives (e.g. "Kumar" matching everyone)
+        // Only if query length > 3
+        if (query.length > 3) {
+             idx = roster.findIndex(p => p.official.toLowerCase().includes(query) || query.includes(p.official.toLowerCase()));
+             if(idx !== -1) return { index: idx, ...roster[idx] };
+        }
+
         return null;
     }
 
     function resetAllZero() {
-        if(confirm("Are you sure? This will set ALL hours to 0.")) {
+        if(confirm("Are you sure? This will set ALL hours to 0 for a fresh start.")) {
             roster.forEach(p => p.hours = 0);
             saveData();
         }
