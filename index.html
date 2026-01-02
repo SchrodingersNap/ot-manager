@@ -1,9 +1,20 @@
+This is **Version 7**. I have updated the logic to strictly follow your new visualization rules:
+
+1. **Absentees:** They remain in the list but show **"A"** in red (instead of D-rank).
+2. **Duty Swap (Original Person):** They remain in the list but show **"DC"** in red.
+3. **Duty Swap (Replacer):** This person (who is working) appears **below the main table** in a separate section. You can add OT hours to them, and their database entry will update instantly, changing their rank for future shifts.
+
+### ✈️ IOCL OT Manager (V7: Advanced Visualization)
+
+Save this as `index.html`.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL OT Manager (V6 Final)</title>
+    <title>IOCL OT Manager (V7 Visuals)</title>
     <style>
         :root { --primary: #0056b3; --bg: #f4f7f6; --text: #333; --card: #fff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 900px; margin: 0 auto; }
@@ -41,29 +52,32 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
         th { text-align: left; padding: 10px; background: #f8f9fa; color: #666; border-bottom: 2px solid #ddd; }
         td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        .dc-row { background: #fff3cd; }
         
-        /* Badges */
-        .badge { display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 0.75em; font-weight: 700; }
-        .grp-badge { background: #e3f2fd; color: #0d47a1; }
-        .dc-badge { background: #ffc107; color: #856404; }
+        /* Row Styles */
+        .row-absent { background-color: #ffebee; color: #b71c1c; }
+        .row-dc { background-color: #fff3e0; color: #e65100; }
+        .row-extra { background-color: #e8f5e9; border-left: 5px solid #4caf50; }
+
+        /* Status Text */
+        .status-A { color: red; font-weight: 900; font-size: 1.2em; }
+        .status-DC { color: red; font-weight: 900; font-size: 1.1em; }
+        .status-D { color: #0056b3; font-weight: bold; }
 
         /* Notifications */
         #statusMsg { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 20px; border-radius: 8px; display: none; z-index: 100; }
-        #unmatchedList { background: #fff5f5; color: #c62828; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>✈️ IOCL OT Manager V6</h1>
-        <div class="subtitle">Initial Sequence from Excel ➝ Starts at Zero</div>
+        <h1>✈️ IOCL OT Manager V7</h1>
+        <div class="subtitle">Visual Status Indicators (A / DC)</div>
     </header>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="showTab('daily')">Daily Operation</button>
-        <button class="tab-btn" onclick="showTab('setup')">Month Start (Set Sequence)</button>
-        <button class="tab-btn" onclick="showTab('roster')">Staff Database</button>
+        <button class="tab-btn" onclick="showTab('setup')">Month Start</button>
+        <button class="tab-btn" onclick="showTab('roster')">Database</button>
     </div>
 
     <div id="daily" class="card active">
@@ -88,10 +102,10 @@
                 <input type="text" id="absentInput" placeholder="Search name...">
             </div>
             <div>
-                <label>Duty Swap (Replacer working for Original)</label>
+                <label>Duty Swap: [Worker] for [Original]</label>
                 <div style="display:flex; gap:5px;">
-                    <input type="text" id="swapReplacer" placeholder="Replacer">
-                    <input type="text" id="swapOriginal" placeholder="Original">
+                    <input type="text" id="swapReplacer" placeholder="Worker (Replacer)">
+                    <input type="text" id="swapOriginal" placeholder="Original (Off)">
                 </div>
             </div>
         </div>
@@ -99,35 +113,45 @@
         <button class="btn-primary" onclick="generateList()">🔄 Generate Priority List</button>
 
         <div id="resultSection" style="display:none; margin-top:20px; border-top:2px solid #eee; padding-top:10px;">
+            
             <h3 style="margin:0 0 10px 0;">Priority Sequence</h3>
             <table>
                 <thead>
                     <tr>
-                        <th style="width:40px">Rank</th>
+                        <th style="width:50px">Rank</th>
                         <th>Name</th>
                         <th>Grp</th>
-                        <th>Current Hrs</th>
+                        <th>Hrs</th>
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="otListBody"></tbody>
+                <tbody id="mainListBody"></tbody>
             </table>
+
+            <h4 style="margin: 20px 0 10px 0; color: #2e7d32;">⬇️ Duty Swap / Replacers</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:50px">Type</th>
+                        <th>Name</th>
+                        <th>Grp</th>
+                        <th>Hrs</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="extraListBody"></tbody>
+            </table>
+
         </div>
     </div>
 
     <div id="setup" class="card">
         <h3>1. New Month Setup</h3>
-        <p style="color:#666; font-size:0.9em;">
-            Paste last month's Excel data. The tool will:<br>
-            1. Calculate the ranking based on Excel.<br>
-            2. <strong>Set everyone's current hours to ZERO.</strong><br>
-            3. Use the calculated ranking as the starting order.
-        </p>
+        <p style="color:#666; font-size:0.9em;">Paste Excel data to set sequence and reset hours to zero.</p>
         <textarea id="excelInput" placeholder="Paste Excel data here..."></textarea>
-        <button class="btn-sec" onclick="processExcel()">Set Sequence & Reset to Zero</button>
-        <div id="unmatchedList"></div>
-        
-        <button class="btn-danger" onclick="hardReset()" style="margin-top: 30px;">⚠️ Factory Reset (Delete All)</button>
+        <button class="btn-sec" onclick="processExcel()">Set Sequence & Reset</button>
+        <div id="unmatchedList" style="margin-top:10px; color:red;"></div>
+        <button class="btn-danger" onclick="hardReset()" style="margin-top: 30px;">⚠️ Factory Reset</button>
     </div>
 
     <div id="roster" class="card">
@@ -136,10 +160,10 @@
         <table>
             <thead>
                 <tr>
-                    <th>Official Name</th>
-                    <th>Group</th>
-                    <th>Current Hrs</th>
-                    <th>Base Rank</th>
+                    <th>Name</th>
+                    <th>Grp</th>
+                    <th>Hrs</th>
+                    <th>Rank</th>
                 </tr>
             </thead>
             <tbody id="dbBody"></tbody>
@@ -151,7 +175,6 @@
 <script>
     const HOURS = { 'A': 6, 'B': 8, 'C': 10 };
     
-    // Default Roster (V6 with Sunit included)
     const defaultRoster = [
         { name: "Bidhan Deb Barma", group: 1 }, { name: "Sanjay Paul", group: 1 },
         { name: "Gourab Biswas", group: 1 }, { name: "Pardeep .", group: 1 },
@@ -185,13 +208,11 @@
 
     let roster = [];
 
-    // === INIT ===
     window.onload = () => {
-        const saved = localStorage.getItem('iocl_v6_data');
+        const saved = localStorage.getItem('iocl_v7_data');
         if (saved) {
             roster = JSON.parse(saved);
         } else {
-            // Init: Default rank is just their array index
             roster = defaultRoster.map((p, i) => ({ ...p, current: 0, baseRank: i }));
             save();
         }
@@ -199,11 +220,11 @@
     };
 
     function save() {
-        localStorage.setItem('iocl_v6_data', JSON.stringify(roster));
+        localStorage.setItem('iocl_v7_data', JSON.stringify(roster));
         renderDB();
     }
 
-    // === CORE LOGIC ===
+    // === GENERATION LOGIC ===
     function generateList() {
         const groups = document.getElementById('dutyInput').value.split(/[\s,]+/).map(Number).filter(n => n > 0);
         const shift = document.getElementById('shiftInput').value;
@@ -211,101 +232,143 @@
         const repName = document.getElementById('swapReplacer').value;
         const orgName = document.getElementById('swapOriginal').value;
 
-        // 1. Mark Absentees
+        // 1. Identify Special Cases
         let absentIdx = [];
         absentees.forEach(a => {
             const p = findPerson(a);
             if(p) absentIdx.push(p.index);
         });
 
-        // 2. Handle Swap (Original is Absent)
+        let originalIdx = -1;
         if (orgName) {
             const org = findPerson(orgName);
-            if (org) absentIdx.push(org.index);
+            if (org) originalIdx = org.index;
         }
 
-        let list = [];
-        let replacer = null;
-
-        // 3. Handle Swap (Replacer)
+        let replacerIdx = -1;
         if (repName) {
             const rep = findPerson(repName);
-            if (rep) {
-                // If Replacer was marked absent, unmark them
-                absentIdx = absentIdx.filter(i => i !== rep.index);
-                // Create Replacer Object
-                replacer = { ...roster[rep.index], idx: rep.index, isDC: true };
-            }
+            if (rep) replacerIdx = rep.index;
         }
 
-        // 4. Build List
+        // 2. Separate Lists
+        let mainListAvailable = [];
+        let mainListUnavailable = []; // Absents and DC-Outs
+        let extraList = []; // Replacers
+
+        // Add Replacer to Extra List
+        if (replacerIdx !== -1) {
+            extraList.push({ ...roster[replacerIdx], idx: replacerIdx });
+        }
+
+        // Iterate Roster
         roster.forEach((p, index) => {
-            if (absentIdx.includes(index)) return;
-            if (replacer && replacer.name === p.name) return; // Skip replacer for now
+            // Skip Replacer (already handled)
+            if (index === replacerIdx) return;
 
+            // Check if in Duty Group
             if (groups.includes(p.group)) {
-                list.push({ ...p, idx: index, isDC: false });
+                
+                // Case: Absent
+                if (absentIdx.includes(index)) {
+                    mainListUnavailable.push({ ...p, idx: index, status: 'A' });
+                }
+                // Case: Original in Swap (DC Out)
+                else if (index === originalIdx) {
+                    mainListUnavailable.push({ ...p, idx: index, status: 'DC' });
+                }
+                // Case: Normal Available
+                else {
+                    mainListAvailable.push({ ...p, idx: index, status: 'Normal' });
+                }
             }
         });
 
-        // 5. SORTING LOGIC (The Core Requirement)
-        // Primary: Current Hours (Ascending)
-        // Tie-Breaker: Base Rank (Ascending)
-        list.sort((a, b) => {
-            if (a.current !== b.current) {
-                return a.current - b.current;
-            }
-            return a.baseRank - b.baseRank; // Use Excel sequence if hours are equal
+        // 3. Sort Available People (Hrs -> Base Rank)
+        mainListAvailable.sort((a, b) => {
+            if (a.current !== b.current) return a.current - b.current;
+            return a.baseRank - b.baseRank;
         });
 
-        // 6. Append Replacer to Bottom
-        if (replacer) list.push(replacer);
+        // 4. Combine Main List (Available first, then Unavailable)
+        const finalMainList = [...mainListAvailable, ...mainListUnavailable];
 
-        renderList(list, shift);
+        renderTables(finalMainList, extraList, shift);
     }
 
-    function renderList(list, shift) {
-        const tbody = document.getElementById('otListBody');
-        tbody.innerHTML = '';
+    function renderTables(mainList, extraList, shift) {
+        const mainBody = document.getElementById('mainListBody');
+        const extraBody = document.getElementById('extraListBody');
+        mainBody.innerHTML = '';
+        extraBody.innerHTML = '';
+        
         document.getElementById('resultSection').style.display = 'block';
         const add = HOURS[shift];
 
-        list.forEach((p, rank) => {
+        // RENDER MAIN TABLE
+        let rankCounter = 1;
+        mainList.forEach(p => {
             const tr = document.createElement('tr');
-            if (p.isDC) tr.className = 'dc-row';
             
+            let rankHtml = '';
+            let rowClass = '';
+
+            if (p.status === 'A') {
+                rankHtml = '<span class="status-A">A</span>';
+                rowClass = 'row-absent';
+            } else if (p.status === 'DC') {
+                rankHtml = '<span class="status-DC">DC</span>';
+                rowClass = 'row-dc';
+            } else {
+                rankHtml = `<span class="status-D">D${rankCounter++}</span>`;
+            }
+
+            tr.className = rowClass;
             tr.innerHTML = `
-                <td><strong>D${rank + 1}</strong></td>
-                <td>
-                    ${p.name}
-                    ${p.isDC ? '<br><span class="badge dc-badge">Swap</span>' : ''}
-                </td>
-                <td><span class="badge grp-badge">${p.group}</span></td>
+                <td>${rankHtml}</td>
+                <td>${p.name}</td>
+                <td>${p.group}</td>
                 <td>${p.current}</td>
                 <td>
                     <button class="btn-primary btn-sm" onclick="update(${p.idx}, ${add}, false)">Work</button>
                     <button class="btn-danger btn-sm" onclick="update(${p.idx}, ${add}, true)">Refuse</button>
                 </td>
             `;
-            tbody.appendChild(tr);
+            mainBody.appendChild(tr);
         });
+
+        // RENDER EXTRA TABLE
+        extraList.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.className = 'row-extra';
+            tr.innerHTML = `
+                <td><span style="font-weight:bold; color:green;">SWAP</span></td>
+                <td>${p.name}</td>
+                <td>${p.group}</td>
+                <td>${p.current}</td>
+                <td>
+                    <button class="btn-primary btn-sm" onclick="update(${p.idx}, ${add}, false)">Work</button>
+                </td>
+            `;
+            extraBody.appendChild(tr);
+        });
+
+        if(extraList.length === 0) {
+            extraBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">No duty swaps entered.</td></tr>';
+        }
     }
 
     function update(index, amount, isRefusal) {
-        if (!confirm(`Confirm Update for ${roster[index].name}?`)) return;
-        // Adds to current hours. This will change their position in the sorting order next time.
+        if (!confirm(`Update ${roster[index].name} hours?`)) return;
         roster[index].current += amount;
         save();
         generateList();
-        showMsg("Hours updated successfully");
+        showMsg("Database Updated!");
     }
 
-    // === MONTH START / EXCEL LOGIC ===
     function processExcel() {
         const lines = document.getElementById('excelInput').value.split('\n');
-        
-        // 1. Temporary object to store excel hours for sorting
-        let excelTotals = roster.map((p, i) => ({ index: i, total: 0 }));
+        let tempStats = roster.map((p, i) => ({ index: i, total: 0 }));
         let count = 0;
         let unmatched = [];
 
@@ -314,11 +377,10 @@
             if (parts.length >= 2) {
                 const name = parts[1].trim();
                 const shiftChar = parts.length >= 5 ? parts[4].trim().toUpperCase() : '';
-                
                 if (HOURS[shiftChar]) {
                     const match = findPerson(name);
                     if (match) {
-                        excelTotals[match.index].total += HOURS[shiftChar];
+                        tempStats[match.index].total += HOURS[shiftChar];
                         count++;
                     } else {
                         unmatched.push(name);
@@ -327,36 +389,24 @@
             }
         });
 
-        // 2. Sort everyone based on these Excel totals
-        excelTotals.sort((a, b) => a.total - b.total);
-
-        // 3. Assign new "Base Rank" and RESET hours
-        excelTotals.forEach((item, newRank) => {
-            roster[item.index].baseRank = newRank; // Store the Sequence
-            roster[item.index].current = 0;        // Reset Hours to Zero
+        tempStats.sort((a, b) => a.total - b.total);
+        tempStats.forEach((item, newRank) => {
+            roster[item.index].baseRank = newRank;
+            roster[item.index].current = 0;
         });
 
         save();
-        
-        const errDiv = document.getElementById('unmatchedList');
-        if (unmatched.length > 0) {
-            errDiv.style.display = 'block';
-            errDiv.innerText = "Unmatched: " + unmatched.join(', ');
-        } else {
-            errDiv.style.display = 'none';
-        }
-        
-        alert(`New Month Started!\n- ${count} Excel records processed.\n- Sequence Established.\n- All Current Hours reset to 0.`);
+        document.getElementById('unmatchedList').innerText = unmatched.length ? "Unmatched: " + unmatched.join(', ') : "";
+        alert(`Reset Complete. ${count} records processed.`);
     }
 
     function hardReset() {
-        if (confirm("DELETE ALL DATA? This cannot be undone.")) {
-            localStorage.removeItem('iocl_v6_data');
+        if (confirm("DELETE ALL DATA?")) {
+            localStorage.removeItem('iocl_v7_data');
             location.reload();
         }
     }
 
-    // === UTILS ===
     function findPerson(query) {
         query = query.toLowerCase().trim().replace(/\s+/g, ' ');
         let idx = roster.findIndex(p => p.name.toLowerCase() === query);
@@ -397,3 +447,5 @@
 </script>
 </body>
 </html>
+
+```
