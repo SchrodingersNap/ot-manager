@@ -1,403 +1,444 @@
+This code is updated with your **"Fresh Start"** logic.
+
+### 🆕 Key Features in this Update:
+
+1. **Zero Hour Start:** Everyone starts with **0 hours** by default (for the new year).
+2. **Excel Initializer:** You can paste the Excel data (like the 31st Dec roster you shared). The system will read the shifts (A/B/C) and **add the initial hours** (6/8/10) to those people to establish the first sequence.
+3. **Advanced Duty Change:** There is now a dedicated **"Duty Swap"** section where you enter **"Who is working"** (Replacer) and **"Who is off"** (Original).
+* The "Original" is automatically marked Absent.
+* The "Replacer" is added to the bottom of the list (Priority: Lowest).
+* If the Replacer works OT, the hours go to *their* name.
+
+
+
+### 📋 How to use for the First Time (Jan 1st Setup)
+
+1. **Paste the Code** and open it.
+2. Click **"Reset / Clear All"** to ensure everyone is at 0.
+3. **Paste your Excel Data** (from 31st Dec) into the text box.
+4. Click **"Calculate Initial Hours"**.
+* *This will give hours to the people who worked on the 31st, creating the starting order for Jan 1st.*
+
+
+5. Now you are ready to generate the list for Jan 1st.
+
+### The Code (`index.html`)
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL OT Manager Pro</title>
+    <title>IOCL OT Manager (2026 Reset)</title>
     <style>
-        :root { --primary: #0056b3; --danger: #d32f2f; --success: #2e7d32; --bg: #f4f6f8; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); padding: 15px; max-width: 900px; margin: 0 auto; color: #333; }
+        :root { --primary: #0d47a1; --accent: #1976d2; --bg: #f4f6f8; --text: #333; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding: 20px; max-width: 1000px; margin: 0 auto; }
         
-        /* Layout */
-        header { text-align: center; margin-bottom: 20px; }
-        h1 { margin: 0; color: var(--primary); font-size: 1.8rem; }
-        .subtitle { color: #666; font-size: 0.9rem; }
+        h1 { color: var(--primary); margin-bottom: 5px; }
+        .subtitle { color: #666; font-size: 0.9em; margin-bottom: 20px; }
         
-        .tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
-        .tab-btn { background: none; border: none; padding: 10px 15px; cursor: pointer; font-weight: bold; color: #666; font-size: 1rem; }
-        .tab-btn.active { color: var(--primary); border-bottom: 3px solid var(--primary); margin-bottom: -12px; }
+        /* Containers */
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; border-left: 5px solid var(--accent); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         
-        .panel { display: none; animation: fadeIn 0.3s; }
-        .panel.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* Inputs */
+        label { font-weight: bold; font-size: 0.85em; display: block; margin-bottom: 5px; color: #555; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em; }
+        textarea { height: 100px; font-family: monospace; font-size: 0.85em; }
+        
+        /* Buttons */
+        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+        button:hover { background: #002171; }
+        button.secondary { background: #757575; }
+        button.danger { background: #d32f2f; }
+        button.action-btn { width: auto; padding: 5px 10px; font-size: 0.8em; margin-right: 5px; }
+        
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: #e3f2fd; text-align: left; padding: 10px; font-size: 0.9em; text-transform: uppercase; color: #0d47a1; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        tr.dc-row { background-color: #fff3e0; } /* Highlight for Duty Change */
+        
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; }
+        .badge-dc { background: #ff9800; color: white; }
+        .badge-grp { background: #e0e0e0; color: #333; }
 
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        
-        /* Inputs & Buttons */
-        label { font-weight: 600; display: block; margin-top: 12px; font-size: 0.9rem; }
-        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
-        textarea { height: 150px; font-family: monospace; font-size: 0.9rem; }
-        
-        button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 15px; font-size: 1rem; transition: 0.2s; }
-        button:hover { background: #004494; }
-        button.secondary { background: #6c757d; }
-        button.refuse { background: var(--danger); }
-        button.small { width: auto; padding: 5px 10px; margin: 0; font-size: 0.8rem; }
-        
-        /* Tables */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid #eee; }
-        th { background-color: #f8f9fa; color: #555; font-size: 0.85rem; text-transform: uppercase; }
-        tr.dc-row { background-color: #fff8e1; }
-        
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
-        .badge-dc { background: #ffecb3; color: #8a6d3b; }
-        .badge-grp { background: #e3f2fd; color: #0d47a1; }
-
-        .log-entry { font-size: 0.9rem; padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
-        .log-time { color: #999; font-size: 0.8rem; }
-
-        /* Notification */
-        #toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 24px; border-radius: 4px; display: none; z-index: 1000; }
+        /* Tabs */
+        .tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
+        .tab { padding: 10px 20px; cursor: pointer; color: #666; font-weight: bold; }
+        .tab.active { border-bottom: 3px solid var(--primary); color: var(--primary); }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="toast">Notification</div>
-
     <header>
-        <h1>✈️ IOCL OT Manager Pro</h1>
-        <div class="subtitle">Shift Optimization Tool</div>
+        <h1>✈️ IOCL OT Manager (Jan 2026)</h1>
+        <div class="subtitle">Zero-Base Start with Excel Calculation Logic</div>
     </header>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
-        <button class="tab-btn" onclick="switchTab('roster')">View Roster</button>
-        <button class="tab-btn" onclick="switchTab('admin')">Admin / Import</button>
+        <div class="tab active" onclick="switchTab('daily')">Daily Operation</div>
+        <div class="tab" onclick="switchTab('init')">Initialize (Excel Calc)</div>
+        <div class="tab" onclick="switchTab('roster')">View Roster</div>
     </div>
 
-    <div id="dashboard" class="panel active">
+    <div id="daily">
         <div class="card">
-            <h3>📅 Start Shift</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <h3>1. Shift Setup</h3>
+            <div class="grid">
                 <div>
-                    <label>Groups on Duty</label>
-                    <input type="text" id="dutyGroups" placeholder="e.g. 1 7">
+                    <label>Groups on Duty (e.g., 1 7)</label>
+                    <input type="text" id="dutyGroups" placeholder="Enter numbers separated by space">
                 </div>
                 <div>
-                    <label>Select Shift</label>
+                    <label>Current Shift (Hrs to Add)</label>
                     <select id="shiftType">
-                        <option value="A">Shift A (+6 hrs)</option>
-                        <option value="B">Shift B (+8 hrs)</option>
-                        <option value="C">Shift C (+10 hrs)</option>
+                        <option value="A">Shift A (+6 Hrs)</option>
+                        <option value="B">Shift B (+8 Hrs)</option>
+                        <option value="C">Shift C (+10 Hrs)</option>
                     </select>
                 </div>
             </div>
 
-            <label>Absentees (Partial names ok)</label>
-            <input type="text" id="absentees" placeholder="e.g. Mohit, Nitin">
+            <br>
+            <div class="grid">
+                <div>
+                    <label>Absentees (Comma separated)</label>
+                    <input type="text" id="absentees" placeholder="Name 1, Name 2...">
+                </div>
+                <div>
+                    <label>Duty Swap: [Who is Working] for [Who is Off]</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="dc_replacer" placeholder="Worker (Replacer)">
+                        <span style="padding-top:10px">for</span>
+                        <input type="text" id="dc_original" placeholder="Original (Off)">
+                    </div>
+                    <small style="color: #666;">* Worker goes to bottom of list. Original is marked absent.</small>
+                </div>
+            </div>
 
-            <label>Duty Swap / Change (Lowest Priority)</label>
-            <input type="text" id="dutyChangers" placeholder="e.g. Sanjit">
-
+            <br>
             <button onclick="generateList()">Generate Priority List</button>
         </div>
 
-        <div id="resultArea" class="card" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3>🚀 Priority Sequence</h3>
-                <span style="font-size:0.8rem; color:#666;">Top = Lowest Hours</span>
-            </div>
+        <div id="resultArea" class="card hidden">
+            <h3>2. OT Priority Sequence</h3>
             <table id="otTable">
                 <thead>
                     <tr>
                         <th>Rank</th>
                         <th>Name</th>
                         <th>Grp</th>
-                        <th>Hrs</th>
-                        <th>Action</th>
+                        <th>Current Hrs</th>
+                        <th>Update</th>
                     </tr>
                 </thead>
                 <tbody id="otTableBody"></tbody>
             </table>
         </div>
+    </div>
 
+    <div id="init" class="hidden">
         <div class="card">
-            <h3>🕒 Recent Activity Log</h3>
-            <div id="activityLog">
-                <div style="text-align:center; color:#999; padding:10px;">No activity yet.</div>
-            </div>
+            <h3>Initial Calculation (Reset Mode)</h3>
+            <p>Paste the Excel data (e.g. from 31st Dec) to calculate the starting hours for the sequence.</p>
+            <label>Paste Excel Data (Column A to E):</label>
+            <textarea id="excelPaste" placeholder="513748  Tej Singh Meena   OPTR   31-12-2025   B&#10;503538  Rajendra Kumar    JR.C   31-12-2025   C"></textarea>
+            
+            <br><br>
+            <button class="secondary" onclick="calculateFromExcel()">Calculate & Add Hours</button>
+            <br><br>
+            <button class="danger" onclick="resetAllZero()">⚠️ Reset Everyone to ZERO</button>
         </div>
     </div>
 
-    <div id="roster" class="panel">
+    <div id="roster" class="hidden">
         <div class="card">
-            <h3>Full Staff Roster</h3>
-            <input type="text" id="searchRoster" onkeyup="renderRosterView()" placeholder="Search name...">
-            <table id="fullRosterTable">
+            <h3>Current Database Status</h3>
+            <input type="text" id="searchRoster" onkeyup="renderRoster()" placeholder="Search...">
+            <table id="rosterTable">
                 <thead>
                     <tr>
-                        <th>Name</th>
+                        <th>Name (Official)</th>
+                        <th>Internal ID</th>
                         <th>Group</th>
                         <th>Total Hours</th>
                     </tr>
                 </thead>
-                <tbody id="fullRosterBody"></tbody>
+                <tbody id="rosterBody"></tbody>
             </table>
         </div>
     </div>
 
-    <div id="admin" class="panel">
-        <div class="card">
-            <h3>📥 Import from Excel</h3>
-            <p style="font-size:0.9rem; color:#666;">
-                Copy your columns from Excel (Name, Group, Hours) and paste them here. 
-                Do not include header rows.
-            </p>
-            <textarea id="importArea" placeholder="Paste Excel data here...&#10;Example:&#10;Bidhan    1    52&#10;S. Paul   1    56"></textarea>
-            <button onclick="importData()">Import Data</button>
-            <p id="importStatus" style="font-size:0.8rem; margin-top:5px;"></p>
-        </div>
+<script>
+    // === CONFIGURATION ===
+    const SHIFT_HOURS = { 'A': 6, 'B': 8, 'C': 10 };
 
-        <div class="card">
-            <h3>📤 Backup Data</h3>
-            <button class="secondary" onclick="exportCSV()">Download Roster (.csv)</button>
-            <button class="refuse" onclick="resetData()" style="margin-top:10px;">Reset Everything</button>
-        </div>
-    </div>
+    // === MASTER ROSTER (Official Names Map) ===
+    // 'name': Internal Short Name
+    // 'official': Name as it appears in Excel
+    const defaultRoster = [
+        // GROUP 1
+        { name: "Bidhan", official: "Bidhan Deb Barma", group: 1, hours: 0 },
+        { name: "S. Paul", official: "S. Paul", group: 1, hours: 0 },
+        { name: "G. Biswas", official: "Gourab Biswas", group: 1, hours: 0 },
+        { name: "Pradeep", official: "Pradip Kumar Mondal", group: 1, hours: 0 },
+        { name: "M. Saha", official: "M. Saha", group: 1, hours: 0 },
+        { name: "P.K. Mondal", official: "P.K. Mondal", group: 1, hours: 0 },
+        { name: "P.K. Meena", official: "P.K. Meena", group: 1, hours: 0 },
+        // GROUP 2
+        { name: "Pankaj", official: "Pankaj Choudhary", group: 2, hours: 0 },
+        { name: "P. Roy", official: "Partha Roy", group: 2, hours: 0 },
+        { name: "M. Swami", official: "Mukesh Swami", group: 2, hours: 0 },
+        { name: "Joydeb", official: "Joydeb Mandal", group: 2, hours: 0 },
+        { name: "A.C. Tirkey", official: "A.C. Tirkey", group: 2, hours: 0 },
+        { name: "Kingshuk", official: "Kingshuk Barman", group: 2, hours: 0 },
+        { name: "S. Dutta", official: "S. Dutta", group: 2, hours: 0 },
+        { name: "R.K. Paul", official: "Rajib Kumar Paul", group: 2, hours: 0 },
+        // GROUP 3
+        { name: "R. Kumar", official: "Rajendra Kumar", group: 3, hours: 0 },
+        { name: "Amit", official: "Amit Kumar", group: 3, hours: 0 },
+        { name: "V. Ambedkar", official: "Varasala Ambedkar", group: 3, hours: 0 },
+        { name: "Vikas", official: "Vikas Chhikara", group: 3, hours: 0 },
+        { name: "D. Dey", official: "D. Dey", group: 3, hours: 0 },
+        { name: "S.K. Mondal", official: "S.K. Mondal", group: 3, hours: 0 },
+        { name: "S. Maji", official: "Sukumar Maji", group: 3, hours: 0 },
+        { name: "A.K. Roy", official: "A.K. Roy", group: 3, hours: 0 },
+        { name: "P. Karmakar", official: "P. Karmakar", group: 3, hours: 0 },
+        // GROUP 4
+        { name: "Mohit", official: "Mohit", group: 4, hours: 0 },
+        { name: "Jitender", official: "Jitender .", group: 4, hours: 0 },
+        { name: "S.J. Banerjee", official: "Subhra Jyoti Banerjee", group: 4, hours: 0 },
+        { name: "T.S. Meena", official: "Tej Singh Meena", group: 4, hours: 0 },
+        { name: "S. Hembram", official: "S. Hembram", group: 4, hours: 0 },
+        { name: "Rajib Sen", official: "Rajib Sen", group: 4, hours: 0 },
+        { name: "Gopal", official: "Gopal", group: 4, hours: 0 },
+        { name: "Kalyan", official: "Kalyan Mondal", group: 4, hours: 0 },
+        // GROUP 5
+        { name: "C.N. Mitra", official: "C.N. Mitra", group: 5, hours: 0 },
+        { name: "Sudhir", official: "Sudhir", group: 5, hours: 0 },
+        { name: "Manjeet", official: "Manjeet .", group: 5, hours: 0 },
+        { name: "Somnath Mondal", official: "Somnath Mondal", group: 5, hours: 0 },
+        { name: "Biswarup", official: "Biswarup", group: 5, hours: 0 },
+        { name: "Ashok Dasgupta", official: "Ashok Dasgupta", group: 5, hours: 0 },
+        { name: "Sanjay Dey", official: "Sanjay Dey", group: 5, hours: 0 },
+        { name: "Sanjit", official: "Sanjit Mondal", group: 5, hours: 0 },
+        // GROUP 6
+        { name: "S. Saha", official: "S. Saha", group: 6, hours: 0 },
+        { name: "Soumen", official: "Soumen Mondal", group: 6, hours: 0 },
+        { name: "Naveen", official: "Naveen", group: 6, hours: 0 },
+        { name: "S. Ghosh", official: "Shayaml Ghosh", group: 6, hours: 0 },
+        { name: "Dhirendra", official: "Dhirendra", group: 6, hours: 0 },
+        { name: "Soumalaya", official: "Soumalaya", group: 6, hours: 0 },
+        // GROUP 7
+        { name: "A. Ali", official: "A. Ali", group: 7, hours: 0 },
+        { name: "Nitin", official: "Nitin", group: 7, hours: 0 },
+        { name: "Anil", official: "Anil", group: 7, hours: 0 },
+        { name: "G. Patra", official: "G. Patra", group: 7, hours: 0 },
+        { name: "P.K. Saha", official: "P.K. Saha", group: 7, hours: 0 },
+        { name: "Sabir Ahmed", official: "Sabir Ahmed", group: 7, hours: 0 },
+        { name: "Somnath Das", official: "Somnath Das", group: 7, hours: 0 },
+        { name: "Hemlal Sharma", official: "Hemlal Sharma", group: 7, hours: 0 }
+    ];
 
-    <script>
-        // === STATE MANAGEMENT ===
-        const CONFIG = { shiftA: 6, shiftB: 8, shiftC: 10 };
-        let roster = [];
-        let logs = [];
+    let roster = [];
 
-        // Load data on start
-        window.onload = function() {
-            const savedRoster = localStorage.getItem('iocl_roster');
-            const savedLogs = localStorage.getItem('iocl_logs');
-            
-            if (savedRoster) roster = JSON.parse(savedRoster);
-            else loadDefaultData(); // Fallback if empty
-
-            if (savedLogs) logs = JSON.parse(savedLogs);
-            
-            renderRosterView();
-            renderLogs();
-        };
-
-        function saveData() {
-            localStorage.setItem('iocl_roster', JSON.stringify(roster));
-            localStorage.setItem('iocl_logs', JSON.stringify(logs));
-            renderRosterView();
+    // === STARTUP ===
+    window.onload = function() {
+        const saved = localStorage.getItem('iocl_jan_2026');
+        if (saved) {
+            roster = JSON.parse(saved);
+        } else {
+            // Load default (All Zeros)
+            roster = JSON.parse(JSON.stringify(defaultRoster));
         }
+        renderRoster();
+    };
 
-        function loadDefaultData() {
-            // Default placeholder to verify system works
-            roster = [
-                { name: "Bidhan (Dr)", group: 1, hours: 52 },
-                { name: "S. Paul (Dr)", group: 1, hours: 56 },
-                { name: "G. Biswas (Dr)", group: 1, hours: 60 }
-            ];
-            saveData();
-        }
+    function saveData() {
+        localStorage.setItem('iocl_jan_2026', JSON.stringify(roster));
+        renderRoster();
+    }
 
-        // === CORE LOGIC ===
-        function generateList() {
-            const dutyInput = document.getElementById('dutyGroups').value;
-            const groups = dutyInput.split(/[\s,]+/).map(Number).filter(n => n > 0);
-            
-            if (groups.length === 0) {
-                showToast("Please enter Group numbers!");
-                return;
+    // === DAILY LOGIC ===
+    function generateList() {
+        // 1. Get Settings
+        const dutyGroups = document.getElementById('dutyGroups').value.split(/[\s,]+/).map(Number).filter(n=>n>0);
+        const shiftType = document.getElementById('shiftType').value;
+        const absenteesInput = document.getElementById('absentees').value.toLowerCase().split(',');
+        
+        // 2. Duty Swap Inputs
+        const replacerName = document.getElementById('dc_replacer').value.trim();
+        const originalName = document.getElementById('dc_original').value.trim();
+
+        // 3. Build List
+        let finalSequence = [];
+        
+        // Find indices for Absentees
+        let absentIndices = [];
+        absenteesInput.forEach(txt => {
+            if(txt.trim()) {
+                let match = findPerson(txt.trim());
+                if(match) absentIndices.push(match.index);
             }
+        });
 
-            const absentees = getIndicesFromInput('absentees');
-            const changers = getIndicesFromInput('dutyChangers');
-
-            let list = [];
-            
-            roster.forEach((p, idx) => {
-                // Filter Logic
-                if (absentees.includes(idx)) return; 
-                if (!groups.includes(p.group)) return;
-
-                let isDC = changers.includes(idx);
-                list.push({ ...p, originalIndex: idx, isDC: isDC });
-            });
-
-            // Sort: DC last, then by Hours
-            list.sort((a, b) => {
-                if (a.isDC !== b.isDC) return a.isDC ? 1 : -1;
-                return a.hours - b.hours;
-            });
-
-            renderResultTable(list);
+        // Handle Duty Swap: Original is Absent, Replacer is DC
+        let replacerObj = null;
+        if(originalName) {
+            let orig = findPerson(originalName);
+            if(orig) absentIndices.push(orig.index);
+        }
+        if(replacerName) {
+            let rep = findPerson(replacerName);
+            if(rep) {
+                // Check if replacer is already in duty group? 
+                // Logic: Even if replacer is from another group, we add them now.
+                replacerObj = { ...roster[rep.index], isDC: true, originalIndex: rep.index };
+            }
         }
 
-        function renderResultTable(list) {
-            const tbody = document.getElementById('otTableBody');
-            tbody.innerHTML = '';
-            document.getElementById('resultArea').style.display = 'block';
-            
-            const shiftChar = document.getElementById('shiftType').value;
-            const addHrs = CONFIG[`shift${shiftChar}`];
+        // 4. Iterate Roster
+        roster.forEach((p, idx) => {
+            // Skip Absentees
+            if (absentIndices.includes(idx)) return;
+            // Skip Replacer here (we add them specifically as DC later to control order)
+            if (replacerObj && replacerObj.name === p.name) return;
 
-            list.forEach((p, rank) => {
-                const tr = document.createElement('tr');
-                if(p.isDC) tr.className = 'dc-row';
+            // Normal Group Logic
+            if (dutyGroups.includes(p.group)) {
+                finalSequence.push({ ...p, isDC: false, originalIndex: idx });
+            }
+        });
 
-                tr.innerHTML = `
-                    <td><strong>D${rank + 1}</strong></td>
-                    <td>${p.name} ${p.isDC ? '<span class="badge badge-dc">DC</span>' : ''}</td>
-                    <td><span class="badge badge-grp">${p.group}</span></td>
-                    <td>${p.hours}</td>
-                    <td>
-                        <div style="display:flex; gap:5px;">
-                            <button class="small" onclick="updateHours(${p.originalIndex}, ${addHrs}, false)">Wrk</button>
-                            <button class="small refuse" onclick="updateHours(${p.originalIndex}, ${addHrs}, true)">Ref</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+        // Sort Normal Group by Hours
+        finalSequence.sort((a, b) => a.hours - b.hours);
+
+        // Add Replacer at the BOTTOM (After group exhausted)
+        if (replacerObj) {
+            finalSequence.push(replacerObj);
         }
 
-        function updateHours(index, amount, isRefusal) {
-            if(!confirm(`Confirm update for ${roster[index].name}?`)) return;
-            
-            const p = roster[index];
-            const old = p.hours;
+        renderTable(finalSequence, shiftType);
+    }
+
+    function renderTable(list, shiftType) {
+        const tbody = document.getElementById('otTableBody');
+        tbody.innerHTML = '';
+        document.getElementById('resultArea').classList.remove('hidden');
+
+        const hoursToAdd = SHIFT_HOURS[shiftType];
+
+        list.forEach((p, rank) => {
+            const tr = document.createElement('tr');
+            if(p.isDC) tr.className = 'dc-row';
+
+            tr.innerHTML = `
+                <td><strong>D${rank+1}</strong></td>
+                <td>
+                    ${p.official}
+                    ${p.isDC ? '<br><span class="badge badge-dc">Duty Swap</span>' : ''}
+                </td>
+                <td><span class="badge badge-grp">${p.group}</span></td>
+                <td>${p.hours}</td>
+                <td>
+                    <button class="action-btn" onclick="updateHours(${p.originalIndex}, ${hoursToAdd}, false)">Work (+${hoursToAdd})</button>
+                    <button class="action-btn danger" onclick="updateHours(${p.originalIndex}, ${hoursToAdd}, true)">Refuse (+${hoursToAdd})</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateHours(idx, amount, isRefusal) {
+        const p = roster[idx];
+        if(confirm(`Update ${p.name}?\n${p.hours} -> ${p.hours + amount}`)) {
             p.hours += amount;
-            
-            // Log it
-            const type = isRefusal ? "Refused" : "Worked";
-            addLog(`${p.name} (${type}): ${old} ➝ ${p.hours}`);
-            
             saveData();
-            generateList(); // Refresh view
-            showToast("Hours Updated!");
+            generateList(); // Refresh
         }
+    }
 
-        // === DATA IMPORT / EXPORT ===
-        function importData() {
-            const raw = document.getElementById('importArea').value;
-            if(!raw.trim()) return;
+    // === EXCEL CALCULATOR ===
+    function calculateFromExcel() {
+        const text = document.getElementById('excelPaste').value;
+        const lines = text.split('\n');
+        let count = 0;
 
-            try {
-                const lines = raw.trim().split('\n');
-                let newRoster = [];
-                let count = 0;
-
-                lines.forEach(line => {
-                    // Split by tab (excel) or multiple spaces
-                    const parts = line.split(/\t/);
-                    
-                    // Expecting: Name | Group | Hours (at least 3 cols)
-                    if(parts.length >= 3) {
-                        let name = parts[0].trim();
-                        let grp = parseInt(parts[1]);
-                        let hrs = parseFloat(parts[2]);
-
-                        if(name && !isNaN(grp) && !isNaN(hrs)) {
-                            newRoster.push({ name: name, group: grp, hours: hrs });
-                            count++;
-                        }
-                    }
-                });
-
-                if(count > 0) {
-                    if(confirm(`Found ${count} valid entries. Overwrite existing roster?`)) {
-                        roster = newRoster;
-                        saveData();
-                        document.getElementById('importStatus').innerHTML = `<span style="color:green">Successfully imported ${count} staff members.</span>`;
-                        document.getElementById('importArea').value = '';
-                    }
-                } else {
-                    alert("Could not parse data. Ensure format is: Name [Tab] Group [Tab] Hours");
-                }
-            } catch(e) {
-                alert("Error importing data: " + e.message);
-            }
-        }
-
-        function exportCSV() {
-            let csv = "Name,Group,Hours\n";
-            roster.forEach(p => {
-                csv += `${p.name},${p.group},${p.hours}\n`;
-            });
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `OT_Roster_${new Date().toISOString().slice(0,10)}.csv`;
-            a.click();
-        }
-
-        // === HELPERS ===
-        function switchTab(tabId) {
-            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-        }
-
-        function getIndicesFromInput(elementId) {
-            const val = document.getElementById(elementId).value.toLowerCase();
-            if(!val) return [];
-            
-            const names = val.split(',').map(s => s.trim()).filter(s => s);
-            let indices = [];
-            
-            names.forEach(n => {
-                // Find index in roster
-                const idx = roster.findIndex(p => p.name.toLowerCase().includes(n));
-                if(idx !== -1) indices.push(idx);
-            });
-            return indices;
-        }
-
-        function renderRosterView() {
-            const tbody = document.getElementById('fullRosterBody');
-            const search = document.getElementById('searchRoster').value.toLowerCase();
-            tbody.innerHTML = '';
-
-            roster.forEach(p => {
-                if(search && !p.name.toLowerCase().includes(search)) return;
+        lines.forEach(line => {
+            // Split by Tab or multiple spaces
+            const parts = line.split(/\t/); 
+            // Expected: Code | Name | Desig | Date | Shift
+            if(parts.length >= 2) {
+                const excelName = parts[1].trim();
+                const shiftChar = parts.length >= 5 ? parts[4].trim().toUpperCase() : '';
                 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${p.name}</td><td>${p.group}</td><td>${p.hours}</td>`;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function addLog(msg) {
-            logs.unshift({ time: new Date().toLocaleTimeString(), msg: msg });
-            if(logs.length > 20) logs.pop();
-            renderLogs();
-        }
-
-        function renderLogs() {
-            const div = document.getElementById('activityLog');
-            div.innerHTML = '';
-            if(logs.length === 0) {
-                div.innerHTML = '<div style="text-align:center; color:#999; padding:10px;">No activity yet.</div>';
-                return;
+                if (SHIFT_HOURS[shiftChar]) {
+                    const hrs = SHIFT_HOURS[shiftChar];
+                    const match = findPerson(excelName);
+                    
+                    if (match) {
+                        roster[match.index].hours += hrs;
+                        count++;
+                    }
+                }
             }
-            logs.forEach(l => {
-                div.innerHTML += `
-                    <div class="log-entry">
-                        <span>${l.msg}</span>
-                        <span class="log-time">${l.time}</span>
-                    </div>`;
-            });
-        }
+        });
+        
+        saveData();
+        alert(`Processed ${count} entries. Initial hours updated.`);
+    }
 
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 3000);
-        }
+    // === UTILITIES ===
+    function findPerson(query) {
+        query = query.toLowerCase();
+        // 1. Exact Official
+        let idx = roster.findIndex(p => p.official.toLowerCase() === query);
+        if(idx !== -1) return { index: idx, ...roster[idx] };
+        
+        // 2. Contains Official
+        idx = roster.findIndex(p => p.official.toLowerCase().includes(query) || query.includes(p.official.toLowerCase()));
+        if(idx !== -1) return { index: idx, ...roster[idx] };
 
-        function resetData() {
-            if(confirm("DANGER: This will delete all staff data. Are you sure?")) {
-                localStorage.clear();
-                location.reload();
-            }
+        // 3. Internal Name
+        idx = roster.findIndex(p => p.name.toLowerCase().includes(query));
+        if(idx !== -1) return { index: idx, ...roster[idx] };
+        
+        return null;
+    }
+
+    function resetAllZero() {
+        if(confirm("Are you sure? This will set ALL hours to 0.")) {
+            roster.forEach(p => p.hours = 0);
+            saveData();
         }
-    </script>
+    }
+
+    function switchTab(id) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('#daily, #init, #roster').forEach(d => d.classList.add('hidden'));
+        
+        event.target.classList.add('active');
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function renderRoster() {
+        const tbody = document.getElementById('rosterBody');
+        tbody.innerHTML = '';
+        const search = document.getElementById('searchRoster').value.toLowerCase();
+        
+        roster.forEach(p => {
+            if(search && !p.official.toLowerCase().includes(search) && !p.name.toLowerCase().includes(search)) return;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${p.official}</td><td>${p.name}</td><td>${p.group}</td><td>${p.hours}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+</script>
 </body>
 </html>
+
+```
