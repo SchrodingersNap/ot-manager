@@ -1,433 +1,441 @@
-I have added **Sunit Kumar Das** to **Group 1** as requested.
-
-### ✈️ IOCL OT Manager (Updated Roster)
-
-Save this code as `index.html`.
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL OT Manager (Official List)</title>
+    <title>IOCL OT Manager (V4 Auto-Save)</title>
     <style>
-        :root { --primary: #0d47a1; --accent: #1976d2; --bg: #f4f6f8; --text: #333; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding: 20px; max-width: 1000px; margin: 0 auto; }
+        :root { --primary: #0056b3; --bg: #f4f7f6; --text: #333; --card: #fff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 900px; margin: 0 auto; }
         
-        h1 { color: var(--primary); margin-bottom: 5px; }
-        .subtitle { color: #666; font-size: 0.9em; margin-bottom: 20px; }
-        
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; border-left: 5px solid var(--accent); }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        
-        label { font-weight: bold; font-size: 0.85em; display: block; margin-bottom: 5px; color: #555; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em; }
-        textarea { height: 120px; font-family: monospace; font-size: 0.85em; }
-        
-        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
-        button:hover { background: #002171; }
-        button.secondary { background: #757575; }
-        button.danger { background: #d32f2f; }
-        button.action-btn { width: auto; padding: 5px 10px; font-size: 0.8em; margin-right: 5px; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { background: #e3f2fd; text-align: left; padding: 10px; font-size: 0.9em; text-transform: uppercase; color: #0d47a1; }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
-        tr.dc-row { background-color: #fff3e0; }
-        
-        .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; }
-        .badge-dc { background: #ff9800; color: white; }
-        .badge-grp { background: #e0e0e0; color: #333; }
-        .error-log { color: #d32f2f; background: #ffebee; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 0.9em; display: none; }
+        /* Header */
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { margin: 0; color: var(--primary); }
+        .subtitle { color: #666; font-size: 0.9em; }
 
-        .tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
-        .tab { padding: 10px 20px; cursor: pointer; color: #666; font-weight: bold; }
-        .tab.active { border-bottom: 3px solid var(--primary); color: var(--primary); }
-        .hidden { display: none; }
+        /* Tabs */
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; }
+        .tab-btn { padding: 10px 20px; border: none; background: #e0e0e0; border-radius: 20px; cursor: pointer; font-weight: 600; white-space: nowrap; }
+        .tab-btn.active { background: var(--primary); color: white; }
+
+        /* Content Cards */
+        .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: none; }
+        .card.active { display: block; }
+        
+        /* Grid Layout */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        /* Inputs */
+        label { display: block; font-size: 0.85em; font-weight: bold; margin-bottom: 5px; color: #555; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1em; }
+        textarea { height: 100px; font-family: monospace; }
+        
+        /* Buttons */
+        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1em; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-sec { background: #6c757d; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-sm { width: auto; padding: 6px 12px; font-size: 0.85em; margin: 0; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; padding: 10px; background: #f8f9fa; color: #666; font-size: 0.85em; }
+        td { padding: 12px 10px; border-bottom: 1px solid #eee; }
+        .dc-row { background: #fff3cd; }
+        
+        /* Badges */
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 0.75em; font-weight: 700; }
+        .grp-badge { background: #e3f2fd; color: #0d47a1; }
+        .dc-badge { background: #ffc107; color: #856404; }
+
+        /* Notifications */
+        #statusMsg { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 20px; border-radius: 8px; display: none; z-index: 100; }
+        #unmatchedList { background: #fff5f5; color: #c62828; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>✈️ IOCL OT Manager (Official List)</h1>
-        <div class="subtitle">Zero-Base Start | Exact Name Matching</div>
+        <h1>✈️ IOCL OT Manager V4</h1>
+        <div class="subtitle">Auto-Sequencing | Monthly Reset Logic</div>
     </header>
 
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('daily')">Daily Operation</div>
-        <div class="tab" onclick="switchTab('init')">Initialize (Excel Calc)</div>
-        <div class="tab" onclick="switchTab('roster')">View Roster</div>
+        <button class="tab-btn active" onclick="showTab('daily')">Daily Operation</button>
+        <button class="tab-btn" onclick="showTab('setup')">Initial Setup (Excel)</button>
+        <button class="tab-btn" onclick="showTab('roster')">Staff Database</button>
     </div>
 
-    <div id="daily">
-        <div class="card">
-            <h3>1. Shift Setup</h3>
-            <div class="grid">
-                <div>
-                    <label>Groups on Duty (e.g., 1 7)</label>
-                    <input type="text" id="dutyGroups" placeholder="Enter numbers separated by space">
-                </div>
-                <div>
-                    <label>Current Shift (Hrs to Add)</label>
-                    <select id="shiftType">
-                        <option value="A">Shift A (+6 Hrs)</option>
-                        <option value="B">Shift B (+8 Hrs)</option>
-                        <option value="C">Shift C (+10 Hrs)</option>
-                    </select>
+    <div id="daily" class="card active">
+        <div class="grid-2">
+            <div>
+                <label>Duty Groups (e.g. 1 7)</label>
+                <input type="text" id="dutyInput" placeholder="Enter group numbers">
+            </div>
+            <div>
+                <label>Select Shift</label>
+                <select id="shiftInput">
+                    <option value="A">Shift A (+6 hrs)</option>
+                    <option value="B">Shift B (+8 hrs)</option>
+                    <option value="C">Shift C (+10 hrs)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="grid-2" style="margin-top: 15px;">
+            <div>
+                <label>Absentees</label>
+                <input type="text" id="absentInput" placeholder="Search name...">
+            </div>
+            <div>
+                <label>Duty Swap (Replacer working for Original)</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="swapReplacer" placeholder="Replacer">
+                    <input type="text" id="swapOriginal" placeholder="Original">
                 </div>
             </div>
-
-            <br>
-            <div class="grid">
-                <div>
-                    <label>Absentees (Comma separated)</label>
-                    <input type="text" id="absentees" placeholder="Name 1, Name 2...">
-                </div>
-                <div>
-                    <label>Duty Swap: [Worker] for [Absentee]</label>
-                    <div style="display: flex; gap: 5px;">
-                        <input type="text" id="dc_replacer" placeholder="Who is Working?">
-                        <span style="padding-top:10px">for</span>
-                        <input type="text" id="dc_original" placeholder="Who is Off?">
-                    </div>
-                </div>
-            </div>
-
-            <br>
-            <button onclick="generateList()">Generate Priority List</button>
         </div>
 
-        <div id="resultArea" class="card hidden">
-            <h3>2. OT Priority Sequence</h3>
-            <table id="otTable">
+        <button class="btn-primary" onclick="generateList()">🔄 Generate Priority List</button>
+
+        <div id="resultSection" style="display:none; margin-top:20px; border-top:2px solid #eee; padding-top:10px;">
+            <h3 style="margin:0 0 10px 0;">Priority Sequence</h3>
+            <table>
                 <thead>
                     <tr>
-                        <th>Rank</th>
+                        <th style="width:50px">Rank</th>
                         <th>Name</th>
                         <th>Grp</th>
-                        <th>Current Hrs</th>
-                        <th>Update</th>
+                        <th>Month Hrs</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="otTableBody"></tbody>
+                <tbody id="otListBody"></tbody>
             </table>
         </div>
     </div>
 
-    <div id="init" class="hidden">
-        <div class="card">
-            <h3>Initial Calculation (Reset Mode)</h3>
-            <p>Paste the Excel data (Cols A-E) to calculate total hours.</p>
-            <textarea id="excelPaste" placeholder="513748  Tej Singh Meena   OPTR   31-12-2025   B&#10;703085  Pradip Kumar Mondal SR.FMN 31-12-2025   C"></textarea>
-            
-            <br><br>
-            <button class="secondary" onclick="calculateFromExcel()">Calculate & Add Hours</button>
-            <div id="errorLog" class="error-log"></div>
-            
-            <br><br>
-            <button class="danger" onclick="resetAllZero()">⚠️ Reset Everyone to ZERO</button>
-        </div>
+    <div id="setup" class="card">
+        <h3>1. Establish Sequence</h3>
+        <p style="color:#666; font-size:0.9em;">Paste Excel data (Cols A-E) from the previous period. This sets the initial rank <strong>without</strong> increasing the current month's hours.</p>
+        <textarea id="excelInput" placeholder="Paste Excel data here..."></textarea>
+        <button class="btn-sec" onclick="processExcel()">Calculate Baseline Sequence</button>
+        <div id="unmatchedList"></div>
+
+        <hr style="margin: 20px 0;">
+        
+        <h3>2. Month End</h3>
+        <p style="color:#666; font-size:0.9em;">Click this on the 1st of the month. It resets "Month Hrs" to 0 but keeps the sorting order.</p>
+        <button class="btn-sec" onclick="startNewMonth()">Start New Month (Preserve Order)</button>
+        
+        <button class="btn-danger" onclick="hardReset()" style="margin-top: 30px;">⚠️ Factory Reset (Delete All)</button>
     </div>
 
-    <div id="roster" class="hidden">
-        <div class="card">
-            <h3>Current Database Status</h3>
-            <input type="text" id="searchRoster" onkeyup="renderRoster()" placeholder="Search...">
-            <table id="rosterTable">
-                <thead>
-                    <tr>
-                        <th>Name (Official)</th>
-                        <th>Internal ID</th>
-                        <th>Group</th>
-                        <th>Total Hours</th>
-                    </tr>
-                </thead>
-                <tbody id="rosterBody"></tbody>
-            </table>
-        </div>
+    <div id="roster" class="card">
+        <h3>Staff Database</h3>
+        <input type="text" id="dbSearch" placeholder="Search..." onkeyup="renderDB()">
+        <table>
+            <thead>
+                <tr>
+                    <th>Official Name</th>
+                    <th>Group</th>
+                    <th>Current</th>
+                    <th>History</th>
+                </tr>
+            </thead>
+            <tbody id="dbBody"></tbody>
+        </table>
     </div>
+
+    <div id="statusMsg"></div>
 
 <script>
-    const SHIFT_HOURS = { 'A': 6, 'B': 8, 'C': 10 };
-
-    // === MASTER ROSTER ===
+    // === CONFIG ===
+    const HOURS = { 'A': 6, 'B': 8, 'C': 10 };
+    
+    // === ROSTER DATA ===
+    // 'current': Hours worked THIS month (Visible)
+    // 'history': Hours from Excel/Past months (Hidden sorter)
     const defaultRoster = [
         // GROUP 1
-        { name: "Bidhan", official: "Bidhan Deb Barma", group: 1, hours: 0 },
-        { name: "S. Paul", official: "Sanjay Paul", group: 1, hours: 0 },
-        { name: "G. Biswas", official: "Gourab Biswas", group: 1, hours: 0 },
-        { name: "Pradeep", official: "Pardeep .", group: 1, hours: 0 },
-        { name: "M. Saha", official: "Mrityunjoy Saha", group: 1, hours: 0 },
-        { name: "P.K. Mondal", official: "Pradip Kumar Mondal", group: 1, hours: 0 },
-        { name: "P.K. Meena", official: "Pramod Kumar Meena", group: 1, hours: 0 },
-        { name: "Sunit", official: "Sunit Kumar Das", group: 1, hours: 0 }, // ADDED HERE
+        { name: "Bidhan Deb Barma", group: 1 },
+        { name: "Sanjay Paul", group: 1 },
+        { name: "Gourab Biswas", group: 1 },
+        { name: "Pardeep .", group: 1 },
+        { name: "Mrityunjoy Saha", group: 1 },
+        { name: "Pradip Kumar Mondal", group: 1 },
+        { name: "Pramod Kumar Meena", group: 1 },
+        { name: "Sunit Kumar Das", group: 1 }, // Added Sunit
 
         // GROUP 2
-        { name: "Pankaj", official: "Pankaj Chowdhury", group: 2, hours: 0 },
-        { name: "P. Roy", official: "PARTHA ROY", group: 2, hours: 0 },
-        { name: "M. Swami", official: "Mukesh Swami", group: 2, hours: 0 },
-        { name: "Joydeb", official: "Joydeb Mandal", group: 2, hours: 0 },
-        { name: "A.C. Tirkey", official: "Abhisake Chandan Tirkey", group: 2, hours: 0 },
-        { name: "Kingshuk", official: "Kingsuk Burman", group: 2, hours: 0 },
-        { name: "S. Dutta", official: "Shibendu Dutta", group: 2, hours: 0 },
-        { name: "R.K. Paul", official: "Rajib Kumar Paul", group: 2, hours: 0 },
+        { name: "Pankaj Chowdhury", group: 2 },
+        { name: "PARTHA ROY", group: 2 },
+        { name: "Mukesh Swami", group: 2 },
+        { name: "Joydeb Mandal", group: 2 },
+        { name: "Abhisake Chandan Tirkey", group: 2 },
+        { name: "Kingsuk Burman", group: 2 },
+        { name: "Shibendu Dutta", group: 2 },
+        { name: "Rajib Kumar Paul", group: 2 },
 
         // GROUP 3
-        { name: "R. Kumar", official: "Rajendra Kumar", group: 3, hours: 0 },
-        { name: "Amit", official: "Amit Kumar", group: 3, hours: 0 },
-        { name: "V. Ambedkar", official: "VARASALA AMBEDKAR", group: 3, hours: 0 },
-        { name: "Vikas", official: "Vikas Chhikara", group: 3, hours: 0 },
-        { name: "D. Dey", official: "DIPANKAR DEY", group: 3, hours: 0 },
-        { name: "S.K. Mondal", official: "Sanjib Kumar Mondal", group: 3, hours: 0 },
-        { name: "S. Maji", official: "Sukumar Maji", group: 3, hours: 0 },
-        { name: "A.K. Roy", official: "Alok Roy", group: 3, hours: 0 },
-        { name: "P. Karmakar", official: "Pradip Karmakar", group: 3, hours: 0 },
+        { name: "Rajendra Kumar", group: 3 },
+        { name: "Amit Kumar", group: 3 },
+        { name: "VARASALA AMBEDKAR", group: 3 },
+        { name: "Vikas Chhikara", group: 3 },
+        { name: "DIPANKAR DEY", group: 3 },
+        { name: "Sanjib Kumar Mondal", group: 3 },
+        { name: "Sukumar Maji", group: 3 },
+        { name: "Alok Roy", group: 3 },
+        { name: "Pradip Karmakar", group: 3 },
 
         // GROUP 4
-        { name: "Mohit", official: "Mohit", group: 4, hours: 0 },
-        { name: "Jitender", official: "Jitender .", group: 4, hours: 0 },
-        { name: "S.J. Banerjee", official: "Subhra Jyoti Banerjee", group: 4, hours: 0 },
-        { name: "T.S. Meena", official: "Tej Singh Meena", group: 4, hours: 0 },
-        { name: "S. Hembram", official: "Sarbeswar Hembram", group: 4, hours: 0 },
-        { name: "Rajib Sen", official: "RAJIB SEN", group: 4, hours: 0 },
-        { name: "Gopal", official: "Gopal Howli", group: 4, hours: 0 },
-        { name: "Kalyan", official: "Kalyan Mondal", group: 4, hours: 0 },
+        { name: "Mohit", group: 4 },
+        { name: "Jitender .", group: 4 },
+        { name: "Subhra Jyoti Banerjee", group: 4 },
+        { name: "Tej Singh Meena", group: 4 },
+        { name: "Sarbeswar Hembram", group: 4 },
+        { name: "RAJIB SEN", group: 4 },
+        { name: "Gopal Howli", group: 4 },
+        { name: "Kalyan Mondal", group: 4 },
 
         // GROUP 5
-        { name: "C.N. Mitra", official: "Chandra Nath Mitra", group: 5, hours: 0 },
-        { name: "Sudhir", official: "Sudhir .", group: 5, hours: 0 },
-        { name: "Manjeet", official: "Manjeet .", group: 5, hours: 0 },
-        { name: "Somnath Mondal", official: "Somenath Mandal", group: 5, hours: 0 },
-        { name: "Biswarup", official: "BISWARUP CHAKRABORTY", group: 5, hours: 0 },
-        { name: "Ashok Dasgupta", official: "Ashok Dasgupta", group: 5, hours: 0 },
-        { name: "Sanjay Dey", official: "Sanjay Dey", group: 5, hours: 0 },
-        { name: "Sanjit", official: "Sanjit Mondal", group: 5, hours: 0 },
+        { name: "Chandra Nath Mitra", group: 5 },
+        { name: "Sudhir .", group: 5 },
+        { name: "Manjeet .", group: 5 },
+        { name: "Somenath Mandal", group: 5 },
+        { name: "BISWARUP CHAKRABORTY", group: 5 },
+        { name: "Ashok Dasgupta", group: 5 },
+        { name: "Sanjay Dey", group: 5 },
+        { name: "Sanjit Mondal", group: 5 },
 
         // GROUP 6
-        { name: "S. Saha", official: "Subhajit Saha", group: 6, hours: 0 },
-        { name: "Soumen", official: "Soumen Mondal", group: 6, hours: 0 },
-        { name: "Naveen", official: "Naveen .", group: 6, hours: 0 },
-        { name: "S. Ghosh", official: "Shayamal Kumar Ghosh", group: 6, hours: 0 },
-        { name: "Dhirendra", official: "Dhirendar Kumar", group: 6, hours: 0 },
-        { name: "Soumalaya", official: "Soumalaya", group: 6, hours: 0 },
+        { name: "Subhajit Saha", group: 6 },
+        { name: "Soumen Mondal", group: 6 },
+        { name: "Naveen .", group: 6 },
+        { name: "Shyamal Kumar Ghosh", group: 6 },
+        { name: "Dhirendar Kumar", group: 6 },
+        { name: "Soumalaya", group: 6 },
 
         // GROUP 7
-        { name: "A. Ali", official: "Azam Ali", group: 7, hours: 0 },
-        { name: "Nitin", official: "Nitin Kumar", group: 7, hours: 0 },
-        { name: "Anil", official: "Anil Kumar", group: 7, hours: 0 },
-        { name: "G. Patra", official: "Goutam Patra", group: 7, hours: 0 },
-        { name: "P.K. Saha", official: "PALLAB KR. SAHA", group: 7, hours: 0 },
-        { name: "Sabir Ahmed", official: "SK. SABIR AHMED", group: 7, hours: 0 },
-        { name: "Somnath Das", official: "SOMENATH DAS", group: 7, hours: 0 },
-        { name: "Hemlal Sharma", official: "Hemlal Sharma", group: 7, hours: 0 }
+        { name: "Azam Ali", group: 7 },
+        { name: "Nitin Kumar", group: 7 },
+        { name: "Anil Kumar", group: 7 },
+        { name: "Goutam Patra", group: 7 },
+        { name: "PALLAB KR. SAHA", group: 7 },
+        { name: "SK. SABIR AHMED", group: 7 },
+        { name: "SOMENATH DAS", group: 7 },
+        { name: "Hemlal Sharma", group: 7 }
     ];
 
     let roster = [];
 
-    // === STARTUP ===
-    window.onload = function() {
-        // Updated storage key to force new roster load
-        const saved = localStorage.getItem('iocl_jan_2026_final_v2');
+    // === INITIALIZATION ===
+    window.onload = () => {
+        // Load existing data or create new
+        const saved = localStorage.getItem('iocl_v4_data');
         if (saved) {
             roster = JSON.parse(saved);
         } else {
-            roster = JSON.parse(JSON.stringify(defaultRoster));
+            // Initialize with 0
+            roster = defaultRoster.map(p => ({ ...p, current: 0, history: 0 }));
+            save();
         }
-        renderRoster();
+        renderDB();
     };
 
-    function saveData() {
-        localStorage.setItem('iocl_jan_2026_final_v2', JSON.stringify(roster));
-        renderRoster();
+    function save() {
+        localStorage.setItem('iocl_v4_data', JSON.stringify(roster));
+        renderDB();
     }
 
     // === DAILY LOGIC ===
     function generateList() {
-        const dutyGroups = document.getElementById('dutyGroups').value.split(/[\s,]+/).map(Number).filter(n=>n>0);
-        const shiftType = document.getElementById('shiftType').value;
-        const absenteesInput = document.getElementById('absentees').value.toLowerCase().split(',');
-        
-        const replacerName = document.getElementById('dc_replacer').value.trim();
-        const originalName = document.getElementById('dc_original').value.trim();
+        const groups = document.getElementById('dutyInput').value.split(/[\s,]+/).map(Number).filter(n => n > 0);
+        const shift = document.getElementById('shiftInput').value;
+        const absentees = document.getElementById('absentInput').value.toLowerCase().split(',').filter(s => s.trim());
+        const repName = document.getElementById('swapReplacer').value;
+        const orgName = document.getElementById('swapOriginal').value;
 
-        let finalSequence = [];
-        let absentIndices = [];
+        // Find Absentees Indices
+        let absentIdx = [];
+        absentees.forEach(a => {
+            const p = findPerson(a);
+            if(p) absentIdx.push(p.index);
+        });
 
-        // Identify Absentees
-        absenteesInput.forEach(txt => {
-            if(txt.trim()) {
-                let match = findPerson(txt.trim());
-                if(match) absentIndices.push(match.index);
+        // Handle Swap (Original is absent)
+        if (orgName) {
+            const org = findPerson(orgName);
+            if (org) absentIdx.push(org.index);
+        }
+
+        let list = [];
+        let replacer = null;
+
+        // Handle Swap (Replacer)
+        if (repName) {
+            const rep = findPerson(repName);
+            if (rep) {
+                // Ensure replacer isn't marked absent
+                absentIdx = absentIdx.filter(i => i !== rep.index);
+                replacer = { ...roster[rep.index], idx: rep.index, isDC: true };
+            }
+        }
+
+        // Build Main List
+        roster.forEach((p, index) => {
+            if (absentIdx.includes(index)) return;
+            if (replacer && replacer.name === p.name) return; // Skip replacer, add later
+
+            if (groups.includes(p.group)) {
+                list.push({ ...p, idx: index, isDC: false });
             }
         });
 
-        // Duty Swap: Original is Absent
-        if(originalName) {
-            let orig = findPerson(originalName);
-            if(orig) absentIndices.push(orig.index);
-        }
-        
-        // Duty Swap: Replacer
-        let replacerObj = null;
-        if(replacerName) {
-            let rep = findPerson(replacerName);
-            if(rep) {
-                // If replacer was marked absent, unmark them
-                if(absentIndices.includes(rep.index)) {
-                    absentIndices = absentIndices.filter(i => i !== rep.index);
-                }
-                replacerObj = { ...roster[rep.index], isDC: true, originalIndex: rep.index };
-            }
-        }
+        // Sorting Logic: Total = History + Current
+        list.sort((a, b) => (a.history + a.current) - (b.history + b.current));
 
-        roster.forEach((p, idx) => {
-            if (absentIndices.includes(idx)) return;
-            if (replacerObj && replacerObj.name === p.name) return; 
+        // Append Replacer to bottom
+        if (replacer) list.push(replacer);
 
-            if (dutyGroups.includes(p.group)) {
-                finalSequence.push({ ...p, isDC: false, originalIndex: idx });
-            }
-        });
-
-        finalSequence.sort((a, b) => a.hours - b.hours);
-
-        if (replacerObj) {
-            finalSequence.push(replacerObj);
-        }
-
-        renderTable(finalSequence, shiftType);
+        renderList(list, shift);
     }
 
-    function renderTable(list, shiftType) {
-        const tbody = document.getElementById('otTableBody');
+    function renderList(list, shift) {
+        const tbody = document.getElementById('otListBody');
         tbody.innerHTML = '';
-        document.getElementById('resultArea').classList.remove('hidden');
-
-        const hoursToAdd = SHIFT_HOURS[shiftType];
+        document.getElementById('resultSection').style.display = 'block';
+        const add = HOURS[shift];
 
         list.forEach((p, rank) => {
             const tr = document.createElement('tr');
-            if(p.isDC) tr.className = 'dc-row';
-
+            if (p.isDC) tr.className = 'dc-row';
+            
             tr.innerHTML = `
-                <td><strong>D${rank+1}</strong></td>
+                <td><strong>D${rank + 1}</strong></td>
                 <td>
-                    ${p.official}
-                    ${p.isDC ? '<br><span class="badge badge-dc">Duty Swap</span>' : ''}
+                    ${p.name}
+                    ${p.isDC ? '<br><span class="badge dc-badge">Swap</span>' : ''}
                 </td>
-                <td><span class="badge badge-grp">${p.group}</span></td>
-                <td>${p.hours}</td>
+                <td><span class="badge grp-badge">${p.group}</span></td>
+                <td>${p.current}</td>
                 <td>
-                    <button class="action-btn" onclick="updateHours(${p.originalIndex}, ${hoursToAdd}, false)">Work (+${hoursToAdd})</button>
-                    <button class="action-btn danger" onclick="updateHours(${p.originalIndex}, ${hoursToAdd}, true)">Refuse (+${hoursToAdd})</button>
+                    <button class="btn-primary btn-sm" onclick="update(${p.idx}, ${add}, false)">Work</button>
+                    <button class="btn-danger btn-sm" onclick="update(${p.idx}, ${add}, true)">Refuse</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    function updateHours(idx, amount, isRefusal) {
-        const p = roster[idx];
-        if(confirm(`Update ${p.official}?\n${p.hours} -> ${p.hours + amount}`)) {
-            p.hours += amount;
-            saveData();
-            generateList(); 
-        }
+    function update(index, amount, isRefusal) {
+        if (!confirm(`Confirm Update for ${roster[index].name}?`)) return;
+        
+        // Add to CURRENT month hours
+        roster[index].current += amount;
+        save();
+        generateList(); // Refresh view
+        showMsg("Hours updated successfully");
     }
 
-    // === EXCEL CALCULATOR ===
-    function calculateFromExcel() {
-        const text = document.getElementById('excelPaste').value;
-        const lines = text.split('\n');
+    // === EXCEL LOGIC ===
+    function processExcel() {
+        const lines = document.getElementById('excelInput').value.split('\n');
         let count = 0;
         let unmatched = [];
 
         lines.forEach(line => {
-            const parts = line.split(/\t/); 
-            // Format: Code | Name | Desig | Date | Shift
-            if(parts.length >= 2) {
-                const excelName = parts[1].trim();
+            const parts = line.split(/\t/);
+            if (parts.length >= 2) {
+                const name = parts[1].trim();
                 const shiftChar = parts.length >= 5 ? parts[4].trim().toUpperCase() : '';
                 
-                if (SHIFT_HOURS[shiftChar]) {
-                    const hrs = SHIFT_HOURS[shiftChar];
-                    const match = findPerson(excelName);
-                    
+                if (HOURS[shiftChar]) {
+                    const match = findPerson(name);
                     if (match) {
-                        roster[match.index].hours += hrs;
+                        // Add to HISTORY (Baseline), not current
+                        roster[match.index].history += HOURS[shiftChar];
                         count++;
                     } else {
-                        unmatched.push(excelName);
+                        unmatched.push(name);
                     }
                 }
             }
         });
+
+        save();
         
-        saveData();
-        
-        // Error Reporting
-        const logDiv = document.getElementById('errorLog');
+        const errDiv = document.getElementById('unmatchedList');
         if (unmatched.length > 0) {
-            logDiv.style.display = 'block';
-            logDiv.innerHTML = `<strong>⚠️ ${unmatched.length} unmatched names (Hours not added):</strong><br>` + unmatched.join(', ');
+            errDiv.style.display = 'block';
+            errDiv.innerText = "Unmatched: " + unmatched.join(', ');
         } else {
-            logDiv.style.display = 'none';
+            errDiv.style.display = 'none';
         }
         
-        alert(`Processed ${count} entries successfully.`);
+        alert(`Sequence updated! ${count} records added to baseline history.`);
     }
 
-    // === UTILITIES ===
-    function findPerson(query) {
-        query = query.toLowerCase().trim();
+    // === MONTH END LOGIC ===
+    function startNewMonth() {
+        if (!confirm("Start New Month? This will reset displayed hours to 0 but keep the sorting order.")) return;
         
-        // 1. Exact Official Match
-        let idx = roster.findIndex(p => p.official.toLowerCase() === query);
-        if(idx !== -1) return { index: idx, ...roster[idx] };
-        
-        // 2. Exact Internal ID Match
-        idx = roster.findIndex(p => p.name.toLowerCase() === query);
-        if(idx !== -1) return { index: idx, ...roster[idx] };
+        roster.forEach(p => {
+            p.history += p.current; // Move current to history
+            p.current = 0;          // Reset current
+        });
+        save();
+        showMsg("New Month Started!");
+    }
 
-        // 3. Partial Match (Official contains query OR Query contains Official)
-        if (query.length > 3) {
-             idx = roster.findIndex(p => p.official.toLowerCase().includes(query) || query.includes(p.official.toLowerCase()));
-             if(idx !== -1) return { index: idx, ...roster[idx] };
+    function hardReset() {
+        if (confirm("DELETE ALL DATA? This cannot be undone.")) {
+            localStorage.removeItem('iocl_v4_data');
+            location.reload();
         }
+    }
 
+    // === UTILS ===
+    function findPerson(query) {
+        query = query.toLowerCase().trim().replace(/\s+/g, ' ');
+        // 1. Exact
+        let idx = roster.findIndex(p => p.name.toLowerCase() === query);
+        if (idx !== -1) return { index: idx, ...roster[idx] };
+        // 2. Partial
+        if (query.length > 3) {
+            idx = roster.findIndex(p => p.name.toLowerCase().includes(query));
+            if (idx !== -1) return { index: idx, ...roster[idx] };
+        }
         return null;
     }
 
-    function resetAllZero() {
-        if(confirm("Are you sure? This will set ALL hours to 0 for a fresh start.")) {
-            roster.forEach(p => p.hours = 0);
-            saveData();
-        }
-    }
-
-    function switchTab(id) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('#daily, #init, #roster').forEach(d => d.classList.add('hidden'));
+    function showTab(id) {
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         event.target.classList.add('active');
-        document.getElementById(id).classList.remove('hidden');
     }
 
-    function renderRoster() {
-        const tbody = document.getElementById('rosterBody');
+    function renderDB() {
+        const tbody = document.getElementById('dbBody');
         tbody.innerHTML = '';
-        const search = document.getElementById('searchRoster').value.toLowerCase();
+        const search = document.getElementById('dbSearch').value.toLowerCase();
         
         roster.forEach(p => {
-            if(search && !p.official.toLowerCase().includes(search) && !p.name.toLowerCase().includes(search)) return;
+            if (search && !p.name.toLowerCase().includes(search)) return;
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${p.official}</td><td>${p.name}</td><td>${p.group}</td><td>${p.hours}</td>`;
+            tr.innerHTML = `<td>${p.name}</td><td>${p.group}</td><td>${p.current}</td><td>${p.history}</td>`;
             tbody.appendChild(tr);
         });
     }
 
+    function showMsg(txt) {
+        const el = document.getElementById('statusMsg');
+        el.innerText = txt;
+        el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 3000);
+    }
 </script>
 </body>
 </html>
-
-```
