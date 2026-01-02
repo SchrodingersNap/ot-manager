@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IOCL OT Manager Pro</title>
+    <style>
+        :root { --primary: #0056b3; --danger: #d32f2f; --success: #2e7d32; --bg: #f4f6f8; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); padding: 15px; max-width: 900px; margin: 0 auto; color: #333; }
+        
+        /* Layout */
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { margin: 0; color: var(--primary); font-size: 1.8rem; }
+        .subtitle { color: #666; font-size: 0.9rem; }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .tab-btn { background: none; border: none; padding: 10px 15px; cursor: pointer; font-weight: bold; color: #666; font-size: 1rem; }
+        .tab-btn.active { color: var(--primary); border-bottom: 3px solid var(--primary); margin-bottom: -12px; }
+        
+        .panel { display: none; animation: fadeIn 0.3s; }
+        .panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        
+        /* Inputs & Buttons */
+        label { font-weight: 600; display: block; margin-top: 12px; font-size: 0.9rem; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
+        textarea { height: 150px; font-family: monospace; font-size: 0.9rem; }
+        
+        button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 15px; font-size: 1rem; transition: 0.2s; }
+        button:hover { background: #004494; }
+        button.secondary { background: #6c757d; }
+        button.refuse { background: var(--danger); }
+        button.small { width: auto; padding: 5px 10px; margin: 0; font-size: 0.8rem; }
+        
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; color: #555; font-size: 0.85rem; text-transform: uppercase; }
+        tr.dc-row { background-color: #fff8e1; }
+        
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge-dc { background: #ffecb3; color: #8a6d3b; }
+        .badge-grp { background: #e3f2fd; color: #0d47a1; }
+
+        .log-entry { font-size: 0.9rem; padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .log-time { color: #999; font-size: 0.8rem; }
+
+        /* Notification */
+        #toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 24px; border-radius: 4px; display: none; z-index: 1000; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">Notification</div>
+
+    <header>
+        <h1>✈️ IOCL OT Manager Pro</h1>
+        <div class="subtitle">Shift Optimization Tool</div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+        <button class="tab-btn" onclick="switchTab('roster')">View Roster</button>
+        <button class="tab-btn" onclick="switchTab('admin')">Admin / Import</button>
+    </div>
+
+    <div id="dashboard" class="panel active">
+        <div class="card">
+            <h3>📅 Start Shift</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label>Groups on Duty</label>
+                    <input type="text" id="dutyGroups" placeholder="e.g. 1 7">
+                </div>
+                <div>
+                    <label>Select Shift</label>
+                    <select id="shiftType">
+                        <option value="A">Shift A (+6 hrs)</option>
+                        <option value="B">Shift B (+8 hrs)</option>
+                        <option value="C">Shift C (+10 hrs)</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Absentees (Partial names ok)</label>
+            <input type="text" id="absentees" placeholder="e.g. Mohit, Nitin">
+
+            <label>Duty Swap / Change (Lowest Priority)</label>
+            <input type="text" id="dutyChangers" placeholder="e.g. Sanjit">
+
+            <button onclick="generateList()">Generate Priority List</button>
+        </div>
+
+        <div id="resultArea" class="card" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>🚀 Priority Sequence</h3>
+                <span style="font-size:0.8rem; color:#666;">Top = Lowest Hours</span>
+            </div>
+            <table id="otTable">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Name</th>
+                        <th>Grp</th>
+                        <th>Hrs</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="otTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h3>🕒 Recent Activity Log</h3>
+            <div id="activityLog">
+                <div style="text-align:center; color:#999; padding:10px;">No activity yet.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="roster" class="panel">
+        <div class="card">
+            <h3>Full Staff Roster</h3>
+            <input type="text" id="searchRoster" onkeyup="renderRosterView()" placeholder="Search name...">
+            <table id="fullRosterTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Group</th>
+                        <th>Total Hours</th>
+                    </tr>
+                </thead>
+                <tbody id="fullRosterBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="admin" class="panel">
+        <div class="card">
+            <h3>📥 Import from Excel</h3>
+            <p style="font-size:0.9rem; color:#666;">
+                Copy your columns from Excel (Name, Group, Hours) and paste them here. 
+                Do not include header rows.
+            </p>
+            <textarea id="importArea" placeholder="Paste Excel data here...&#10;Example:&#10;Bidhan    1    52&#10;S. Paul   1    56"></textarea>
+            <button onclick="importData()">Import Data</button>
+            <p id="importStatus" style="font-size:0.8rem; margin-top:5px;"></p>
+        </div>
+
+        <div class="card">
+            <h3>📤 Backup Data</h3>
+            <button class="secondary" onclick="exportCSV()">Download Roster (.csv)</button>
+            <button class="refuse" onclick="resetData()" style="margin-top:10px;">Reset Everything</button>
+        </div>
+    </div>
+
+    <script>
+        // === STATE MANAGEMENT ===
+        const CONFIG = { shiftA: 6, shiftB: 8, shiftC: 10 };
+        let roster = [];
+        let logs = [];
+
+        // Load data on start
+        window.onload = function() {
+            const savedRoster = localStorage.getItem('iocl_roster');
+            const savedLogs = localStorage.getItem('iocl_logs');
+            
+            if (savedRoster) roster = JSON.parse(savedRoster);
+            else loadDefaultData(); // Fallback if empty
+
+            if (savedLogs) logs = JSON.parse(savedLogs);
+            
+            renderRosterView();
+            renderLogs();
+        };
+
+        function saveData() {
+            localStorage.setItem('iocl_roster', JSON.stringify(roster));
+            localStorage.setItem('iocl_logs', JSON.stringify(logs));
+            renderRosterView();
+        }
+
+        function loadDefaultData() {
+            // Default placeholder to verify system works
+            roster = [
+                { name: "Bidhan (Dr)", group: 1, hours: 52 },
+                { name: "S. Paul (Dr)", group: 1, hours: 56 },
+                { name: "G. Biswas (Dr)", group: 1, hours: 60 }
+            ];
+            saveData();
+        }
+
+        // === CORE LOGIC ===
+        function generateList() {
+            const dutyInput = document.getElementById('dutyGroups').value;
+            const groups = dutyInput.split(/[\s,]+/).map(Number).filter(n => n > 0);
+            
+            if (groups.length === 0) {
+                showToast("Please enter Group numbers!");
+                return;
+            }
+
+            const absentees = getIndicesFromInput('absentees');
+            const changers = getIndicesFromInput('dutyChangers');
+
+            let list = [];
+            
+            roster.forEach((p, idx) => {
+                // Filter Logic
+                if (absentees.includes(idx)) return; 
+                if (!groups.includes(p.group)) return;
+
+                let isDC = changers.includes(idx);
+                list.push({ ...p, originalIndex: idx, isDC: isDC });
+            });
+
+            // Sort: DC last, then by Hours
+            list.sort((a, b) => {
+                if (a.isDC !== b.isDC) return a.isDC ? 1 : -1;
+                return a.hours - b.hours;
+            });
+
+            renderResultTable(list);
+        }
+
+        function renderResultTable(list) {
+            const tbody = document.getElementById('otTableBody');
+            tbody.innerHTML = '';
+            document.getElementById('resultArea').style.display = 'block';
+            
+            const shiftChar = document.getElementById('shiftType').value;
+            const addHrs = CONFIG[`shift${shiftChar}`];
+
+            list.forEach((p, rank) => {
+                const tr = document.createElement('tr');
+                if(p.isDC) tr.className = 'dc-row';
+
+                tr.innerHTML = `
+                    <td><strong>D${rank + 1}</strong></td>
+                    <td>${p.name} ${p.isDC ? '<span class="badge badge-dc">DC</span>' : ''}</td>
+                    <td><span class="badge badge-grp">${p.group}</span></td>
+                    <td>${p.hours}</td>
+                    <td>
+                        <div style="display:flex; gap:5px;">
+                            <button class="small" onclick="updateHours(${p.originalIndex}, ${addHrs}, false)">Wrk</button>
+                            <button class="small refuse" onclick="updateHours(${p.originalIndex}, ${addHrs}, true)">Ref</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateHours(index, amount, isRefusal) {
+            if(!confirm(`Confirm update for ${roster[index].name}?`)) return;
+            
+            const p = roster[index];
+            const old = p.hours;
+            p.hours += amount;
+            
+            // Log it
+            const type = isRefusal ? "Refused" : "Worked";
+            addLog(`${p.name} (${type}): ${old} ➝ ${p.hours}`);
+            
+            saveData();
+            generateList(); // Refresh view
+            showToast("Hours Updated!");
+        }
+
+        // === DATA IMPORT / EXPORT ===
+        function importData() {
+            const raw = document.getElementById('importArea').value;
+            if(!raw.trim()) return;
+
+            try {
+                const lines = raw.trim().split('\n');
+                let newRoster = [];
+                let count = 0;
+
+                lines.forEach(line => {
+                    // Split by tab (excel) or multiple spaces
+                    const parts = line.split(/\t/);
+                    
+                    // Expecting: Name | Group | Hours (at least 3 cols)
+                    if(parts.length >= 3) {
+                        let name = parts[0].trim();
+                        let grp = parseInt(parts[1]);
+                        let hrs = parseFloat(parts[2]);
+
+                        if(name && !isNaN(grp) && !isNaN(hrs)) {
+                            newRoster.push({ name: name, group: grp, hours: hrs });
+                            count++;
+                        }
+                    }
+                });
+
+                if(count > 0) {
+                    if(confirm(`Found ${count} valid entries. Overwrite existing roster?`)) {
+                        roster = newRoster;
+                        saveData();
+                        document.getElementById('importStatus').innerHTML = `<span style="color:green">Successfully imported ${count} staff members.</span>`;
+                        document.getElementById('importArea').value = '';
+                    }
+                } else {
+                    alert("Could not parse data. Ensure format is: Name [Tab] Group [Tab] Hours");
+                }
+            } catch(e) {
+                alert("Error importing data: " + e.message);
+            }
+        }
+
+        function exportCSV() {
+            let csv = "Name,Group,Hours\n";
+            roster.forEach(p => {
+                csv += `${p.name},${p.group},${p.hours}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `OT_Roster_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        }
+
+        // === HELPERS ===
+        function switchTab(tabId) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function getIndicesFromInput(elementId) {
+            const val = document.getElementById(elementId).value.toLowerCase();
+            if(!val) return [];
+            
+            const names = val.split(',').map(s => s.trim()).filter(s => s);
+            let indices = [];
+            
+            names.forEach(n => {
+                // Find index in roster
+                const idx = roster.findIndex(p => p.name.toLowerCase().includes(n));
+                if(idx !== -1) indices.push(idx);
+            });
+            return indices;
+        }
+
+        function renderRosterView() {
+            const tbody = document.getElementById('fullRosterBody');
+            const search = document.getElementById('searchRoster').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            roster.forEach(p => {
+                if(search && !p.name.toLowerCase().includes(search)) return;
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${p.name}</td><td>${p.group}</td><td>${p.hours}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function addLog(msg) {
+            logs.unshift({ time: new Date().toLocaleTimeString(), msg: msg });
+            if(logs.length > 20) logs.pop();
+            renderLogs();
+        }
+
+        function renderLogs() {
+            const div = document.getElementById('activityLog');
+            div.innerHTML = '';
+            if(logs.length === 0) {
+                div.innerHTML = '<div style="text-align:center; color:#999; padding:10px;">No activity yet.</div>';
+                return;
+            }
+            logs.forEach(l => {
+                div.innerHTML += `
+                    <div class="log-entry">
+                        <span>${l.msg}</span>
+                        <span class="log-time">${l.time}</span>
+                    </div>`;
+            });
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
+        }
+
+        function resetData() {
+            if(confirm("DANGER: This will delete all staff data. Are you sure?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
