@@ -1,5 +1,3 @@
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IOCL OT Manager (V14)</title>
     <style>
-        :root { --primary: #0056b3; --bg: #f4f7f6; --text: #333; --card: #fff; }
+        :root { --primary: #0056b3; --bg: #f4f7f6; --text: #333; --card: #fff; --edit: #ff9800; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 950px; margin: 0 auto; }
         
         /* Header */
@@ -24,7 +22,7 @@
         .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: none; }
         .card.active { display: block; }
         
-        /* Grid Layout */
+        /* Layout */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         
         /* Inputs */
@@ -37,8 +35,14 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-sec { background: #6c757d; color: white; }
         .btn-danger { background: #dc3545; color: white; }
+        .btn-edit { background: var(--edit); color: white; width: auto; padding: 8px 15px; float: right; margin-top: -5px; font-size: 0.9em; }
+        .btn-save { background: #28a745; color: white; width: auto; padding: 8px 15px; float: right; margin-top: -5px; display: none; }
         .btn-sm { width: auto; padding: 6px 12px; font-size: 0.85em; margin: 0; }
-        .btn-edit { background: #ff9800; color: white; width: auto; padding: 5px 10px; font-size: 0.8em; }
+        .btn-add { background: #28a745; color: white; margin-top: 0; width: auto; padding: 10px 15px; }
+
+        /* Swaps */
+        .swap-item { background: #e8f5e9; padding: 8px; border-radius: 6px; margin-top: 5px; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center; border: 1px solid #c8e6c9; }
+        .del-swap { color: red; cursor: pointer; font-weight: bold; margin-left: 10px; padding: 0 5px; }
 
         /* Tables */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
@@ -50,14 +54,18 @@
         .row-dc { background-color: #fff3e0; color: #e65100; opacity: 0.7; }
         .row-extra { background-color: #e8f5e9; border-left: 5px solid #4caf50; }
 
-        /* Status & Badges */
-        .status-A { color: red; font-weight: 900; font-size: 1.2em; }
-        .status-DC { color: #e65100; font-weight: 900; font-size: 1.1em; }
-        .status-Rank { color: #0056b3; font-weight: bold; font-size: 1.1em; }
-        
+        /* Badges */
         .badge { display: inline-block; padding: 2px 6px; border-radius: 6px; font-size: 0.75em; font-weight: 700; margin-right: 5px; }
         .badge-dr { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; } 
         .badge-nd { background: #f5f5f5; color: #616161; border: 1px solid #e0e0e0; }
+        
+        /* Status Text */
+        .status-A { color: red; font-weight: 900; font-size: 1.2em; }
+        .status-DC { color: #e65100; font-weight: 900; font-size: 1.1em; }
+        .status-Rank { color: #0056b3; font-weight: bold; font-size: 1.1em; }
+
+        /* Edit Input */
+        .edit-input { width: 60px; padding: 5px; text-align: center; border: 2px solid var(--edit); border-radius: 4px; }
 
         /* Notifications */
         #statusMsg { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 20px; border-radius: 8px; display: none; z-index: 100; }
@@ -68,13 +76,13 @@
 
     <header>
         <h1>✈️ IOCL OT Manager V14</h1>
-        <div class="subtitle">Manual Correction Mode Enabled</div>
+        <div class="subtitle">Correction Mode | Multi-Swap | Auto-Rank</div>
     </header>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="showTab('daily')">Daily Operation</button>
-        <button class="tab-btn" onclick="showTab('roster')">Database (Edit/Correct)</button>
         <button class="tab-btn" onclick="showTab('setup')">Import Sequence</button>
+        <button class="tab-btn" onclick="showTab('roster')">Database</button>
     </div>
 
     <div id="daily" class="card active">
@@ -93,25 +101,34 @@
             </div>
         </div>
         
-        <div class="grid-2" style="margin-top: 15px;">
-            <div>
-                <label>Absentees</label>
-                <input type="text" id="absentInput" placeholder="Search name...">
+        <div style="margin-top: 15px;">
+            <label>Absentees</label>
+            <input type="text" id="absentInput" placeholder="Search name (comma separated)...">
+        </div>
+
+        <div style="margin-top: 15px; background: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
+            <label style="color:#2e7d32;">Duty Swap Manager (Multiple)</label>
+            <div style="display:flex; gap:5px; align-items:center;">
+                <input type="text" id="swapReplacer" placeholder="Worker (Replacer)">
+                <span>for</span>
+                <input type="text" id="swapOriginal" placeholder="Original (Off)">
+                <button class="btn-add" onclick="addSwap()">+ Add</button>
             </div>
-            <div>
-                <label>Duty Swap: [Worker] for [Original]</label>
-                <div style="display:flex; gap:5px;">
-                    <input type="text" id="swapReplacer" placeholder="Worker">
-                    <input type="text" id="swapOriginal" placeholder="Original">
-                </div>
-            </div>
+            <div id="activeSwapsList"></div>
         </div>
 
         <button class="btn-primary" onclick="generateList()">🔄 Generate Priority List</button>
 
         <div id="resultSection" style="display:none; margin-top:20px; border-top:2px solid #eee; padding-top:10px;">
             
-            <h3 style="margin:0 0 10px 0;">Priority Sequence</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0;">Priority Sequence</h3>
+                <div>
+                    <button id="btnEdit" class="btn-edit" onclick="toggleEditMode(true)">✎ Correction Mode</button>
+                    <button id="btnSave" class="btn-save" onclick="saveCorrections()">💾 Save Corrections</button>
+                </div>
+            </div>
+
             <table>
                 <thead>
                     <tr>
@@ -144,24 +161,6 @@
         </div>
     </div>
 
-    <div id="roster" class="card">
-        <h3>Staff Database & Corrections</h3>
-        <p style="color:#666; font-size:0.8em;">Made a mistake? Click "Edit" to fix hours manually.</p>
-        <input type="text" id="dbSearch" placeholder="Search Name..." onkeyup="renderDB()">
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>Grp</th>
-                    <th>Hrs</th>
-                    <th>Fix</th>
-                </tr>
-            </thead>
-            <tbody id="dbBody"></tbody>
-        </table>
-    </div>
-
     <div id="setup" class="card">
         <h3>1. Import Base Sequence</h3>
         <p style="color:#666; font-size:0.9em;">Paste Excel (Name + Rank). Resets Hours to 0.</p>
@@ -171,12 +170,29 @@
         <button class="btn-danger" onclick="hardReset()" style="margin-top: 30px;">⚠️ Factory Reset</button>
     </div>
 
+    <div id="roster" class="card">
+        <h3>Staff Database</h3>
+        <input type="text" id="dbSearch" placeholder="Search..." onkeyup="renderDB()">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Grp</th>
+                    <th>Hrs</th>
+                    <th>Seq</th>
+                </tr>
+            </thead>
+            <tbody id="dbBody"></tbody>
+        </table>
+    </div>
+
     <div id="statusMsg"></div>
 
 <script>
     const HOURS = { 'A': 6, 'B': 8, 'C': 10 };
     
-    // DB Map
+    // DB Map (Role: Dr=Driver, ND=Non-Driver)
     const dbMap = [
         { name: "Bidhan Deb Barma", group: 1, role: "Dr" }, { name: "Sanjay Paul", group: 1, role: "Dr" },
         { name: "Gourab Biswas", group: 1, role: "Dr" }, { name: "Pardeep .", group: 1, role: "Dr" },
@@ -209,45 +225,80 @@
     ];
 
     let roster = [];
+    let activeSwaps = []; 
+    let isEditMode = false; // State for correction mode
 
     window.onload = () => {
-        // v14 Key
-        const saved = localStorage.getItem('iocl_v14_data');
-        if (saved) {
-            roster = JSON.parse(saved);
+        const savedRoster = localStorage.getItem('iocl_v14_data');
+        const savedSwaps = localStorage.getItem('iocl_v14_swaps');
+        
+        if (savedRoster) {
+            roster = JSON.parse(savedRoster);
         } else {
             roster = dbMap.map((p, i) => ({ ...p, current: 0, baseRank: i, lastWorked: 0 }));
             save();
+        }
+
+        if (savedSwaps) {
+            activeSwaps = JSON.parse(savedSwaps);
+            renderSwaps();
         }
         renderDB();
     };
 
     function save() {
         localStorage.setItem('iocl_v14_data', JSON.stringify(roster));
+        localStorage.setItem('iocl_v14_swaps', JSON.stringify(activeSwaps));
         renderDB();
     }
 
-    // === EDIT FUNCTION (Fix Mistakes) ===
-    function manualEdit(index) {
-        const p = roster[index];
-        const newHrs = prompt(`Edit Hours for ${p.name}\nCurrent: ${p.current}`, p.current);
+    // === SWAP MANAGER ===
+    function addSwap() {
+        const repName = document.getElementById('swapReplacer').value;
+        const orgName = document.getElementById('swapOriginal').value;
+        if (!repName || !orgName) return alert("Enter both names.");
+
+        const rep = findPerson(repName);
+        const org = findPerson(orgName);
+
+        if (!rep) return alert("Replacer not found.");
+        if (!org) return alert("Original not found.");
+
+        activeSwaps.push({ repName: rep.name, repIdx: rep.index, orgName: org.name, orgIdx: org.index });
         
-        if (newHrs !== null && !isNaN(newHrs)) {
-            p.current = parseFloat(newHrs);
-            // Optionally ask for Rank correction too?
-            // For simplicity, we assume if you fix hours, sequence auto-fixes on next generation
+        document.getElementById('swapReplacer').value = '';
+        document.getElementById('swapOriginal').value = '';
+        save();
+        renderSwaps();
+    }
+
+    function removeSwap(index) {
+        if(confirm("Remove this swap?")) {
+            activeSwaps.splice(index, 1);
             save();
-            showMsg("Corrected! Value Saved.");
+            renderSwaps();
         }
     }
 
-    // === GENERATE LIST ===
+    function renderSwaps() {
+        const div = document.getElementById('activeSwapsList');
+        div.innerHTML = '';
+        activeSwaps.forEach((s, i) => {
+            div.innerHTML += `
+                <div class="swap-item">
+                    <span><strong>${s.repName}</strong> for ${s.orgName}</span>
+                    <span class="del-swap" onclick="removeSwap(${i})">X</span>
+                </div>`;
+        });
+    }
+
+    // === CORE LOGIC ===
     function generateList() {
+        if(isEditMode) toggleEditMode(false); // Cancel edit if generating new
+
         const groups = document.getElementById('dutyInput').value.split(/[\s,]+/).map(Number).filter(n => n > 0);
         const shift = document.getElementById('shiftInput').value;
         const absentees = document.getElementById('absentInput').value.toLowerCase().split(',').filter(s => s.trim());
-        const repName = document.getElementById('swapReplacer').value;
-        const orgName = document.getElementById('swapOriginal').value;
 
         let absentIdx = [];
         absentees.forEach(a => {
@@ -255,33 +306,27 @@
             if(p) absentIdx.push(p.index);
         });
 
-        let originalIdx = -1;
-        if (orgName) {
-            const org = findPerson(orgName);
-            if (org) originalIdx = org.index;
-        }
+        let dcOriginalsIdx = [];
+        let replacersIdx = [];
 
-        let replacerIdx = -1;
-        if (repName) {
-            const rep = findPerson(repName);
-            if (rep) replacerIdx = rep.index;
-        }
+        activeSwaps.forEach(s => {
+            dcOriginalsIdx.push(s.orgIdx);
+            replacersIdx.push(s.repIdx);
+            if (absentIdx.includes(s.repIdx)) absentIdx = absentIdx.filter(i => i !== s.repIdx);
+        });
 
         let mainList = [];
         let extraList = [];
 
-        if (replacerIdx !== -1) {
-            extraList.push({ ...roster[replacerIdx], idx: replacerIdx });
-        }
+        replacersIdx.forEach(idx => extraList.push({ ...roster[idx], idx: idx }));
 
         roster.forEach((p, index) => {
-            if (index === replacerIdx) return; 
+            if (replacersIdx.includes(index)) return; 
 
             if (groups.includes(p.group)) {
                 let status = 'Normal';
                 if (absentIdx.includes(index)) status = 'A';
-                else if (index === originalIdx) status = 'DC';
-                
+                else if (dcOriginalsIdx.includes(index)) status = 'DC';
                 mainList.push({ ...p, idx: index, status: status });
             }
         });
@@ -305,21 +350,34 @@
         const add = HOURS[shift];
         const getBadge = (role) => role === 'Dr' ? `<span class="badge badge-dr">Driver</span>` : `<span class="badge badge-nd">Non-Dr</span>`;
 
+        // MAIN TABLE
         let rankCounter = 1;
         mainList.forEach(p => {
             const tr = document.createElement('tr');
-            let rankHtml = '';
-            let rowClass = '';
+            let rankHtml = '', rowClass = '', actionHtml = '';
 
             if (p.status === 'A') {
-                rankHtml = '<span class="status-A">A</span>';
-                rowClass = 'row-absent';
+                rankHtml = '<span class="status-A">A</span>'; rowClass = 'row-absent';
             } else if (p.status === 'DC') {
-                rankHtml = '<span class="status-DC">DC</span>';
-                rowClass = 'row-dc';
+                rankHtml = '<span class="status-DC">DC</span>'; rowClass = 'row-dc';
             } else {
                 rankHtml = `<span class="status-Rank">${rankCounter++}</span>`;
             }
+
+            if (isEditMode) {
+                // EDIT MODE INPUT
+                actionHtml = `<span style="color:#999; font-size:0.8em;">Editing...</span>`;
+            } else {
+                // NORMAL BUTTONS
+                actionHtml = `
+                    <button class="btn-primary btn-sm" onclick="update(${p.idx}, ${add}, false)">Work</button>
+                    <button class="btn-danger btn-sm" onclick="update(${p.idx}, ${add}, true)">Refuse</button>`;
+            }
+
+            // Display Hours: Text or Input?
+            const hoursDisplay = isEditMode 
+                ? `<input type="number" class="edit-input" id="edit_hrs_${p.idx}" value="${p.current}">` 
+                : p.current;
 
             tr.className = rowClass;
             tr.innerHTML = `
@@ -327,40 +385,48 @@
                 <td>${p.name}</td>
                 <td>${getBadge(p.role)}</td>
                 <td>${p.group}</td>
-                <td>${p.current}</td>
-                <td>
-                    <button class="btn-primary btn-sm" onclick="update(${p.idx}, ${add}, false)">Work</button>
-                    <button class="btn-danger btn-sm" onclick="update(${p.idx}, ${add}, true)">Refuse</button>
-                </td>
+                <td>${hoursDisplay}</td>
+                <td>${actionHtml}</td>
             `;
             mainBody.appendChild(tr);
         });
 
+        // EXTRA TABLE
         extraList.forEach(p => {
             const tr = document.createElement('tr');
             tr.className = 'row-extra';
+            
+            const hoursDisplay = isEditMode 
+                ? `<input type="number" class="edit-input" id="edit_hrs_${p.idx}" value="${p.current}">` 
+                : p.current;
+
+            const actionHtml = isEditMode 
+                ? `<span style="color:#999; font-size:0.8em;">Editing...</span>`
+                : `<button class="btn-primary btn-sm" onclick="update(${p.idx}, ${add}, false)">Work</button>
+                   <button class="btn-danger btn-sm" onclick="update(${p.idx}, ${add}, true)">Refuse</button>`;
+
             tr.innerHTML = `
                 <td><span style="font-weight:bold; color:green;">SWAP</span></td>
                 <td>${p.name}</td>
                 <td>${getBadge(p.role)}</td>
                 <td>${p.group}</td>
-                <td>${p.current}</td>
-                <td>
-                    <button class="btn-primary btn-sm" onclick="update(${p.idx}, ${add}, false)">Work</button>
-                    <button class="btn-danger btn-sm" onclick="update(${p.idx}, ${add}, true)">Refuse</button>
-                </td>
+                <td>${hoursDisplay}</td>
+                <td>${actionHtml}</td>
             `;
             extraBody.appendChild(tr);
         });
 
-        if(extraList.length === 0) extraBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No duty swaps.</td></tr>';
+        if(extraList.length === 0) extraBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No active swaps.</td></tr>';
     }
 
     function update(index, amount, isRefusal) {
         if (!confirm(`Update ${roster[index].name}?`)) return;
         roster[index].current += amount;
         roster[index].lastWorked = Date.now();
-        
+        autoReRank();
+    }
+
+    function autoReRank() {
         let tempRoster = [...roster].map((p, i) => ({ ...p, originalIdx: i }));
         tempRoster.sort((a, b) => {
             if (a.current !== b.current) return a.current - b.current;
@@ -370,16 +436,58 @@
         tempRoster.forEach((p, newRank) => {
             roster[p.originalIdx].baseRank = newRank;
         });
-
         save();
         generateList();
-        showMsg("Updated!");
+        showMsg("Updated & Re-sorted");
     }
 
-    // === UTILS ===
+    // === CORRECTION MODE ===
+    function toggleEditMode(enable) {
+        isEditMode = enable;
+        const btnEdit = document.getElementById('btnEdit');
+        const btnSave = document.getElementById('btnSave');
+        
+        if (enable) {
+            btnEdit.style.display = 'none';
+            btnSave.style.display = 'inline-block';
+            // Re-render table with inputs
+            // We need to call generateList but without resetting data
+            const groups = document.getElementById('dutyInput').value;
+            if(groups) generateList(); 
+        } else {
+            btnEdit.style.display = 'inline-block';
+            btnSave.style.display = 'none';
+            generateList(); // Re-render normal
+        }
+    }
+
+    function saveCorrections() {
+        // Iterate through roster and find matching inputs
+        let changes = 0;
+        roster.forEach((p, idx) => {
+            const input = document.getElementById(`edit_hrs_${idx}`);
+            if (input) {
+                const newVal = parseFloat(input.value);
+                if (!isNaN(newVal) && newVal !== p.current) {
+                    p.current = newVal;
+                    changes++;
+                }
+            }
+        });
+
+        if (changes > 0) {
+            autoReRank(); // Save and re-sort
+            alert(`Saved ${changes} corrections.`);
+        }
+        toggleEditMode(false);
+    }
+
+    // === IMPORT ===
     function processBaseSequence() {
         const lines = document.getElementById('excelInput').value.split('\n');
         let count = 0;
+        let unmatched = [];
+
         roster.forEach(p => { p.current = 0; p.lastWorked = 0; p.baseRank = 999; });
 
         lines.forEach(line => {
@@ -392,17 +500,21 @@
                     if (match) {
                         roster[match.index].baseRank = rank;
                         count++;
+                    } else {
+                        unmatched.push(name);
                     }
                 }
             }
         });
+
         save();
-        alert(`Import Complete!\n- ${count} sequences set.`);
+        document.getElementById('unmatchedList').innerText = unmatched.length ? "Unmatched: " + unmatched.join(', ') : "";
+        alert(`Import Complete!\n- ${count} sequences set.\n- All Hours reset to 0.`);
     }
 
     function hardReset() {
         if (confirm("DELETE ALL DATA?")) {
-            localStorage.removeItem('iocl_v14_data');
+            localStorage.clear();
             location.reload();
         }
     }
@@ -430,23 +542,15 @@
         tbody.innerHTML = '';
         const search = document.getElementById('dbSearch').value.toLowerCase();
         
-        roster.forEach((p, i) => {
+        roster.forEach(p => {
             if (search && !p.name.toLowerCase().includes(search)) return;
             const tr = document.createElement('tr');
             
             const badge = p.role === 'Dr' 
-                ? `<span class="badge badge-dr">Dr</span>` 
-                : `<span class="badge badge-nd">ND</span>`;
+                ? `<span class="badge badge-dr">Driver</span>` 
+                : `<span class="badge badge-nd">Non-Dr</span>`;
 
-            tr.innerHTML = `
-                <td>${p.name}</td>
-                <td>${badge}</td>
-                <td>${p.group}</td>
-                <td>${p.current}</td>
-                <td>
-                    <button class="btn-edit" onclick="manualEdit(${i})">✏️ Edit</button>
-                </td>
-            `;
+            tr.innerHTML = `<td>${p.name}</td><td>${badge}</td><td>${p.group}</td><td>${p.current}</td><td>${p.baseRank}</td>`;
             tbody.appendChild(tr);
         });
     }
@@ -460,5 +564,3 @@
 </script>
 </body>
 </html>
-
-```
