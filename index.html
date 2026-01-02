@@ -1,10 +1,16 @@
-This is **Version 7**. I have updated the logic to strictly follow your new visualization rules:
+This is **Version 8**. I have updated the code to strictly follow your new sorting and ranking rules.
 
-1. **Absentees:** They remain in the list but show **"A"** in red (instead of D-rank).
-2. **Duty Swap (Original Person):** They remain in the list but show **"DC"** in red.
-3. **Duty Swap (Replacer):** This person (who is working) appears **below the main table** in a separate section. You can add OT hours to them, and their database entry will update instantly, changing their rank for future shifts.
+### 🌟 Key Changes in V8:
 
-### ✈️ IOCL OT Manager (V7: Advanced Visualization)
+1. **Unified Sorting:** Absentees (`A`) and Duty Swap Originals (`DC`) are **no longer moved to the bottom**. They stay exactly where they belong in the list based on their hours.
+2. **New Numbering:** Changed from "D1, D2" to simple **"1, 2, 3..."**.
+3. **Smart Ranking:** The numbers (1, 2, 3) **skip** the Absentees and DC staff.
+* *Example:* If the top person is Absent, they show "A". The next person gets rank "1".
+
+
+4. **Replacer Options:** Added a **"Refuse"** button for the Replacer (Duty Swap Worker) so they can also refuse OT.
+
+### ✈️ IOCL OT Manager (V8: Unified Sequence)
 
 Save this as `index.html`.
 
@@ -14,7 +20,7 @@ Save this as `index.html`.
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL OT Manager (V7 Visuals)</title>
+    <title>IOCL OT Manager (V8 Unified)</title>
     <style>
         :root { --primary: #0056b3; --bg: #f4f7f6; --text: #333; --card: #fff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 900px; margin: 0 auto; }
@@ -54,14 +60,14 @@ Save this as `index.html`.
         td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
         
         /* Row Styles */
-        .row-absent { background-color: #ffebee; color: #b71c1c; }
-        .row-dc { background-color: #fff3e0; color: #e65100; }
+        .row-absent { background-color: #ffebee; color: #b71c1c; opacity: 0.8; }
+        .row-dc { background-color: #fff3e0; color: #e65100; opacity: 0.8; }
         .row-extra { background-color: #e8f5e9; border-left: 5px solid #4caf50; }
 
         /* Status Text */
         .status-A { color: red; font-weight: 900; font-size: 1.2em; }
-        .status-DC { color: red; font-weight: 900; font-size: 1.1em; }
-        .status-D { color: #0056b3; font-weight: bold; }
+        .status-DC { color: #e65100; font-weight: 900; font-size: 1.1em; }
+        .status-Rank { color: #0056b3; font-weight: bold; font-size: 1.1em; }
 
         /* Notifications */
         #statusMsg { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 20px; border-radius: 8px; display: none; z-index: 100; }
@@ -70,8 +76,8 @@ Save this as `index.html`.
 <body>
 
     <header>
-        <h1>✈️ IOCL OT Manager V7</h1>
-        <div class="subtitle">Visual Status Indicators (A / DC)</div>
+        <h1>✈️ IOCL OT Manager V8</h1>
+        <div class="subtitle">Unified Sorting | Smart Ranking (1, 2, 3...)</div>
     </header>
 
     <div class="tabs">
@@ -209,7 +215,8 @@ Save this as `index.html`.
     let roster = [];
 
     window.onload = () => {
-        const saved = localStorage.getItem('iocl_v7_data');
+        // Use v8 key to force fresh load with correct logic
+        const saved = localStorage.getItem('iocl_v8_data');
         if (saved) {
             roster = JSON.parse(saved);
         } else {
@@ -220,7 +227,7 @@ Save this as `index.html`.
     };
 
     function save() {
-        localStorage.setItem('iocl_v7_data', JSON.stringify(roster));
+        localStorage.setItem('iocl_v8_data', JSON.stringify(roster));
         renderDB();
     }
 
@@ -251,9 +258,8 @@ Save this as `index.html`.
             if (rep) replacerIdx = rep.index;
         }
 
-        // 2. Separate Lists
-        let mainListAvailable = [];
-        let mainListUnavailable = []; // Absents and DC-Outs
+        // 2. Build Single Main List (for sequence preservation)
+        let mainList = [];
         let extraList = []; // Replacers
 
         // Add Replacer to Extra List
@@ -263,37 +269,34 @@ Save this as `index.html`.
 
         // Iterate Roster
         roster.forEach((p, index) => {
-            // Skip Replacer (already handled)
+            // Skip Replacer (already handled in extra list)
             if (index === replacerIdx) return;
 
             // Check if in Duty Group
             if (groups.includes(p.group)) {
+                let status = 'Normal';
                 
                 // Case: Absent
                 if (absentIdx.includes(index)) {
-                    mainListUnavailable.push({ ...p, idx: index, status: 'A' });
+                    status = 'A';
                 }
                 // Case: Original in Swap (DC Out)
                 else if (index === originalIdx) {
-                    mainListUnavailable.push({ ...p, idx: index, status: 'DC' });
+                    status = 'DC';
                 }
-                // Case: Normal Available
-                else {
-                    mainListAvailable.push({ ...p, idx: index, status: 'Normal' });
-                }
+                
+                mainList.push({ ...p, idx: index, status: status });
             }
         });
 
-        // 3. Sort Available People (Hrs -> Base Rank)
-        mainListAvailable.sort((a, b) => {
+        // 3. Unified Sorting (Hrs -> Base Rank)
+        // This ensures A and DC stay "in sequence" based on their hours
+        mainList.sort((a, b) => {
             if (a.current !== b.current) return a.current - b.current;
             return a.baseRank - b.baseRank;
         });
 
-        // 4. Combine Main List (Available first, then Unavailable)
-        const finalMainList = [...mainListAvailable, ...mainListUnavailable];
-
-        renderTables(finalMainList, extraList, shift);
+        renderTables(mainList, extraList, shift);
     }
 
     function renderTables(mainList, extraList, shift) {
@@ -307,12 +310,14 @@ Save this as `index.html`.
 
         // RENDER MAIN TABLE
         let rankCounter = 1;
+        
         mainList.forEach(p => {
             const tr = document.createElement('tr');
             
             let rankHtml = '';
             let rowClass = '';
 
+            // Assign numbers ONLY to Normal people
             if (p.status === 'A') {
                 rankHtml = '<span class="status-A">A</span>';
                 rowClass = 'row-absent';
@@ -320,7 +325,7 @@ Save this as `index.html`.
                 rankHtml = '<span class="status-DC">DC</span>';
                 rowClass = 'row-dc';
             } else {
-                rankHtml = `<span class="status-D">D${rankCounter++}</span>`;
+                rankHtml = `<span class="status-Rank">${rankCounter++}</span>`; // Simple 1, 2, 3
             }
 
             tr.className = rowClass;
@@ -348,6 +353,7 @@ Save this as `index.html`.
                 <td>${p.current}</td>
                 <td>
                     <button class="btn-primary btn-sm" onclick="update(${p.idx}, ${add}, false)">Work</button>
+                    <button class="btn-danger btn-sm" onclick="update(${p.idx}, ${add}, true)">Refuse</button>
                 </td>
             `;
             extraBody.appendChild(tr);
@@ -402,7 +408,7 @@ Save this as `index.html`.
 
     function hardReset() {
         if (confirm("DELETE ALL DATA?")) {
-            localStorage.removeItem('iocl_v7_data');
+            localStorage.removeItem('iocl_v8_data');
             location.reload();
         }
     }
