@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL OT Manager (V9 Smart Sort)</title>
+    <title>IOCL OT Manager (V11 Master)</title>
     <style>
         :root { --primary: #0056b3; --bg: #f4f7f6; --text: #333; --card: #fff; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 900px; margin: 0 auto; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 950px; margin: 0 auto; }
         
         /* Header */
         header { text-align: center; margin-bottom: 20px; }
@@ -22,13 +22,13 @@
         .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: none; }
         .card.active { display: block; }
         
-        /* Layouts */
+        /* Grid Layout */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         
         /* Inputs */
         label { display: block; font-size: 0.85em; font-weight: bold; margin-bottom: 5px; color: #555; }
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1em; }
-        textarea { height: 100px; font-family: monospace; }
+        textarea { height: 120px; font-family: monospace; }
         
         /* Buttons */
         button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1em; transition: 0.2s; }
@@ -43,40 +43,45 @@
         td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
         
         /* Row Styles */
-        .row-absent { background-color: #ffebee; color: #b71c1c; opacity: 0.8; }
-        .row-dc { background-color: #fff3e0; color: #e65100; opacity: 0.8; }
+        .row-absent { background-color: #ffebee; color: #b71c1c; opacity: 0.7; }
+        .row-dc { background-color: #fff3e0; color: #e65100; opacity: 0.7; }
         .row-extra { background-color: #e8f5e9; border-left: 5px solid #4caf50; }
 
-        /* Status Text */
+        /* Status & Badges */
         .status-A { color: red; font-weight: 900; font-size: 1.2em; }
         .status-DC { color: #e65100; font-weight: 900; font-size: 1.1em; }
         .status-Rank { color: #0056b3; font-weight: bold; font-size: 1.1em; }
+        
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 6px; font-size: 0.75em; font-weight: 700; margin-right: 5px; }
+        .badge-dr { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; } /* Blue for Drivers */
+        .badge-nd { background: #f5f5f5; color: #616161; border: 1px solid #e0e0e0; } /* Gray for Non-Drivers */
 
         /* Notifications */
         #statusMsg { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 20px; border-radius: 8px; display: none; z-index: 100; }
+        #unmatchedList { background: #fff5f5; color: #c62828; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>✈️ IOCL OT Manager V9</h1>
-        <div class="subtitle">Smart Sorting: Hours > Recency > Base Sequence</div>
+        <h1>✈️ IOCL OT Manager V11</h1>
+        <div class="subtitle">Driver/Non-Driver Distinction | Unified Sorting</div>
     </header>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="showTab('daily')">Daily Operation</button>
-        <button class="tab-btn" onclick="showTab('setup')">Month Start</button>
+        <button class="tab-btn" onclick="showTab('setup')">Import Sequence</button>
         <button class="tab-btn" onclick="showTab('roster')">Database</button>
     </div>
 
     <div id="daily" class="card active">
         <div class="grid-2">
             <div>
-                <label>Duty Groups (e.g. 1 7)</label>
+                <label>Groups on Duty (e.g. 1 7)</label>
                 <input type="text" id="dutyInput" placeholder="Enter group numbers">
             </div>
             <div>
-                <label>Select Shift</label>
+                <label>OT Next Shift (Hrs)</label>
                 <select id="shiftInput">
                     <option value="A">Shift A (+6 hrs)</option>
                     <option value="B">Shift B (+8 hrs)</option>
@@ -93,8 +98,8 @@
             <div>
                 <label>Duty Swap: [Worker] for [Original]</label>
                 <div style="display:flex; gap:5px;">
-                    <input type="text" id="swapReplacer" placeholder="Worker (Replacer)">
-                    <input type="text" id="swapOriginal" placeholder="Original (Off)">
+                    <input type="text" id="swapReplacer" placeholder="Worker">
+                    <input type="text" id="swapOriginal" placeholder="Original">
                 </div>
             </div>
         </div>
@@ -104,12 +109,13 @@
         <div id="resultSection" style="display:none; margin-top:20px; border-top:2px solid #eee; padding-top:10px;">
             
             <h3 style="margin:0 0 10px 0;">Priority Sequence</h3>
-            <p style="font-size:0.8em; color:#666;"><i>Sorting Logic: Lowest Hours → Least Recently Worked → Base Sequence</i></p>
+            <p style="font-size:0.8em; color:#666;"><i>Lowest Hours → Least Recently Worked → Base Sequence</i></p>
             <table>
                 <thead>
                     <tr>
-                        <th style="width:50px">Rank</th>
+                        <th style="width:40px">Rank</th>
                         <th>Name</th>
+                        <th>Role</th>
                         <th>Grp</th>
                         <th>Hrs</th>
                         <th>Action</th>
@@ -122,8 +128,9 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width:50px">Type</th>
+                        <th style="width:40px">Type</th>
                         <th>Name</th>
+                        <th>Role</th>
                         <th>Grp</th>
                         <th>Hrs</th>
                         <th>Action</th>
@@ -136,11 +143,11 @@
     </div>
 
     <div id="setup" class="card">
-        <h3>1. New Month Setup</h3>
-        <p style="color:#666; font-size:0.9em;">Paste Excel data to set the initial "Base Sequence" and reset hours to zero.</p>
-        <textarea id="excelInput" placeholder="Paste Excel data here..."></textarea>
-        <button class="btn-sec" onclick="processExcel()">Set Sequence & Reset</button>
-        <div id="unmatchedList" style="margin-top:10px; color:red;"></div>
+        <h3>1. Import Base Sequence</h3>
+        <p style="color:#666; font-size:0.9em;">Paste Excel (Name + Rank). Resets Hours to 0.</p>
+        <textarea id="excelInput" placeholder="Example:&#10;Tej Singh Meena   1&#10;Rajendra Kumar    2"></textarea>
+        <button class="btn-sec" onclick="processBaseSequence()">Import & Reset</button>
+        <div id="unmatchedList"></div>
         <button class="btn-danger" onclick="hardReset()" style="margin-top: 30px;">⚠️ Factory Reset</button>
     </div>
 
@@ -151,9 +158,10 @@
             <thead>
                 <tr>
                     <th>Name</th>
+                    <th>Role</th>
                     <th>Grp</th>
                     <th>Hrs</th>
-                    <th>Last OT</th>
+                    <th>Base Seq</th>
                 </tr>
             </thead>
             <tbody id="dbBody"></tbody>
@@ -165,52 +173,92 @@
 <script>
     const HOURS = { 'A': 6, 'B': 8, 'C': 10 };
     
-    // Default Roster (V8 list)
-    const defaultRoster = [
-        { name: "Bidhan Deb Barma", group: 1 }, { name: "Sanjay Paul", group: 1 },
-        { name: "Gourab Biswas", group: 1 }, { name: "Pardeep .", group: 1 },
-        { name: "Mrityunjoy Saha", group: 1 }, { name: "Pradip Kumar Mondal", group: 1 },
-        { name: "Pramod Kumar Meena", group: 1 }, { name: "Sunit Kumar Das", group: 1 },
-        { name: "Pankaj Chowdhury", group: 2 }, { name: "PARTHA ROY", group: 2 },
-        { name: "Mukesh Swami", group: 2 }, { name: "Joydeb Mandal", group: 2 },
-        { name: "Abhisake Chandan Tirkey", group: 2 }, { name: "Kingsuk Burman", group: 2 },
-        { name: "Shibendu Dutta", group: 2 }, { name: "Rajib Kumar Paul", group: 2 },
-        { name: "Rajendra Kumar", group: 3 }, { name: "Amit Kumar", group: 3 },
-        { name: "VARASALA AMBEDKAR", group: 3 }, { name: "Vikas Chhikara", group: 3 },
-        { name: "DIPANKAR DEY", group: 3 }, { name: "Sanjib Kumar Mondal", group: 3 },
-        { name: "Sukumar Maji", group: 3 }, { name: "Alok Roy", group: 3 },
-        { name: "Pradip Karmakar", group: 3 },
-        { name: "Mohit", group: 4 }, { name: "Jitender .", group: 4 },
-        { name: "Subhra Jyoti Banerjee", group: 4 }, { name: "Tej Singh Meena", group: 4 },
-        { name: "Sarbeswar Hembram", group: 4 }, { name: "RAJIB SEN", group: 4 },
-        { name: "Gopal Howli", group: 4 }, { name: "Kalyan Mondal", group: 4 },
-        { name: "Chandra Nath Mitra", group: 5 }, { name: "Sudhir .", group: 5 },
-        { name: "Manjeet .", group: 5 }, { name: "Somenath Mandal", group: 5 },
-        { name: "BISWARUP CHAKRABORTY", group: 5 }, { name: "Ashok Dasgupta", group: 5 },
-        { name: "Sanjay Dey", group: 5 }, { name: "Sanjit Mondal", group: 5 },
-        { name: "Subhajit Saha", group: 6 }, { name: "Soumen Mondal", group: 6 },
-        { name: "Naveen .", group: 6 }, { name: "Shyamal Kumar Ghosh", group: 6 },
-        { name: "Dhirendar Kumar", group: 6 }, { name: "Soumalaya", group: 6 },
-        { name: "Azam Ali", group: 7 }, { name: "Nitin Kumar", group: 7 },
-        { name: "Anil Kumar", group: 7 }, { name: "Goutam Patra", group: 7 },
-        { name: "PALLAB KR. SAHA", group: 7 }, { name: "SK. SABIR AHMED", group: 7 },
-        { name: "SOMENATH DAS", group: 7 }, { name: "Hemlal Sharma", group: 7 }
+    // DB MAP: Includes Role (Dr = Driver, ND = Non-Driver)
+    const dbMap = [
+        // GROUP 1
+        { name: "Bidhan Deb Barma", group: 1, role: "Dr" }, 
+        { name: "Sanjay Paul", group: 1, role: "Dr" },
+        { name: "Gourab Biswas", group: 1, role: "Dr" }, 
+        { name: "Pardeep .", group: 1, role: "Dr" },
+        { name: "Mrityunjoy Saha", group: 1, role: "ND" }, 
+        { name: "Pradip Kumar Mondal", group: 1, role: "ND" },
+        { name: "Pramod Kumar Meena", group: 1, role: "ND" }, 
+        { name: "Sunit Kumar Das", group: 1, role: "ND" },
+
+        // GROUP 2
+        { name: "Pankaj Chowdhury", group: 2, role: "Dr" }, 
+        { name: "PARTHA ROY", group: 2, role: "Dr" },
+        { name: "Mukesh Swami", group: 2, role: "Dr" }, 
+        { name: "Joydeb Mandal", group: 2, role: "Dr" },
+        { name: "Abhisake Chandan Tirkey", group: 2, role: "ND" }, 
+        { name: "Kingsuk Burman", group: 2, role: "ND" },
+        { name: "Shibendu Dutta", group: 2, role: "ND" }, 
+        { name: "Rajib Kumar Paul", group: 2, role: "ND" },
+
+        // GROUP 3
+        { name: "Rajendra Kumar", group: 3, role: "Dr" }, 
+        { name: "Amit Kumar", group: 3, role: "Dr" },
+        { name: "VARASALA AMBEDKAR", group: 3, role: "Dr" }, 
+        { name: "Vikas Chhikara", group: 3, role: "Dr" },
+        { name: "DIPANKAR DEY", group: 3, role: "Dr" },
+        { name: "Sanjib Kumar Mondal", group: 3, role: "ND" }, 
+        { name: "Sukumar Maji", group: 3, role: "ND" }, 
+        { name: "Alok Roy", group: 3, role: "ND" }, 
+        { name: "Pradip Karmakar", group: 3, role: "ND" },
+
+        // GROUP 4
+        { name: "Mohit", group: 4, role: "Dr" }, 
+        { name: "Jitender .", group: 4, role: "Dr" },
+        { name: "Subhra Jyoti Banerjee", group: 4, role: "Dr" }, 
+        { name: "Tej Singh Meena", group: 4, role: "Dr" },
+        { name: "Sarbeswar Hembram", group: 4, role: "ND" }, 
+        { name: "RAJIB SEN", group: 4, role: "ND" }, 
+        { name: "Gopal Howli", group: 4, role: "ND" }, 
+        { name: "Kalyan Mondal", group: 4, role: "ND" },
+
+        // GROUP 5
+        { name: "Chandra Nath Mitra", group: 5, role: "Dr" }, 
+        { name: "Sudhir .", group: 5, role: "Dr" },
+        { name: "Manjeet .", group: 5, role: "Dr" }, 
+        { name: "Somenath Mandal", group: 5, role: "Dr" },
+        { name: "BISWARUP CHAKRABORTY", group: 5, role: "ND" }, 
+        { name: "Ashok Dasgupta", group: 5, role: "ND" }, 
+        { name: "Sanjay Dey", group: 5, role: "ND" }, 
+        { name: "Sanjit Mondal", group: 5, role: "ND" },
+
+        // GROUP 6
+        { name: "Subhajit Saha", group: 6, role: "Dr" }, 
+        { name: "Soumen Mondal", group: 6, role: "Dr" },
+        { name: "Naveen .", group: 6, role: "Dr" }, 
+        { name: "Shyamal Kumar Ghosh", group: 6, role: "ND" }, 
+        { name: "Dhirendar Kumar", group: 6, role: "ND" }, 
+        { name: "Soumalaya", group: 6, role: "ND" },
+
+        // GROUP 7
+        { name: "Azam Ali", group: 7, role: "Dr" }, 
+        { name: "Nitin Kumar", group: 7, role: "Dr" },
+        { name: "Anil Kumar", group: 7, role: "Dr" }, 
+        { name: "Goutam Patra", group: 7, role: "Dr" },
+        { name: "PALLAB KR. SAHA", group: 7, role: "ND" }, 
+        { name: "SK. SABIR AHMED", group: 7, role: "ND" }, 
+        { name: "SOMENATH DAS", group: 7, role: "ND" }, 
+        { name: "Hemlal Sharma", group: 7, role: "ND" }
     ];
 
     let roster = [];
 
     // === STARTUP ===
     window.onload = () => {
-        const saved = localStorage.getItem('iocl_v9_data');
+        // v11 key
+        const saved = localStorage.getItem('iocl_v11_data');
         if (saved) {
             roster = JSON.parse(saved);
         } else {
-            // Init: current=0, baseRank=index, lastWorked=0
-            roster = defaultRoster.map((p, i) => ({ 
+            roster = dbMap.map((p, i) => ({ 
                 ...p, 
                 current: 0, 
-                baseRank: i,
-                lastWorked: 0 // New field for Tie-Breaking
+                baseRank: 999, 
+                lastWorked: 0
             }));
             save();
         }
@@ -218,7 +266,7 @@
     };
 
     function save() {
-        localStorage.setItem('iocl_v9_data', JSON.stringify(roster));
+        localStorage.setItem('iocl_v11_data', JSON.stringify(roster));
         renderDB();
     }
 
@@ -230,7 +278,7 @@
         const repName = document.getElementById('swapReplacer').value;
         const orgName = document.getElementById('swapOriginal').value;
 
-        // 1. Identification
+        // 1. Identify Special Cases
         let absentIdx = [];
         absentees.forEach(a => {
             const p = findPerson(a);
@@ -249,7 +297,7 @@
             if (rep) replacerIdx = rep.index;
         }
 
-        // 2. Build List
+        // 2. Build Lists
         let mainList = [];
         let extraList = [];
 
@@ -258,7 +306,7 @@
         }
 
         roster.forEach((p, index) => {
-            if (index === replacerIdx) return;
+            if (index === replacerIdx) return; 
 
             if (groups.includes(p.group)) {
                 let status = 'Normal';
@@ -269,17 +317,10 @@
             }
         });
 
-        // 3. SMART SORTING LOGIC
+        // 3. SORTING LOGIC
         mainList.sort((a, b) => {
-            // Condition 1: Hours (Ascending)
             if (a.current !== b.current) return a.current - b.current;
-            
-            // Condition 2: Recency (Ascending Timestamp)
-            // Smaller timestamp = Older date = Higher Priority (Rank 1)
-            // Larger timestamp = Recent date = Lower Priority (Rank Last)
             if (a.lastWorked !== b.lastWorked) return a.lastWorked - b.lastWorked;
-
-            // Condition 3: Base Sequence (Ascending)
             return a.baseRank - b.baseRank;
         });
 
@@ -294,6 +335,13 @@
         
         document.getElementById('resultSection').style.display = 'block';
         const add = HOURS[shift];
+
+        // Helper for Badge
+        const getBadge = (role) => {
+            return role === 'Dr' 
+                ? `<span class="badge badge-dr">Driver</span>` 
+                : `<span class="badge badge-nd">Non-Dr</span>`;
+        };
 
         // MAIN TABLE
         let rankCounter = 1;
@@ -316,6 +364,7 @@
             tr.innerHTML = `
                 <td>${rankHtml}</td>
                 <td>${p.name}</td>
+                <td>${getBadge(p.role)}</td>
                 <td>${p.group}</td>
                 <td>${p.current}</td>
                 <td>
@@ -333,6 +382,7 @@
             tr.innerHTML = `
                 <td><span style="font-weight:bold; color:green;">SWAP</span></td>
                 <td>${p.name}</td>
+                <td>${getBadge(p.role)}</td>
                 <td>${p.group}</td>
                 <td>${p.current}</td>
                 <td>
@@ -343,40 +393,40 @@
             extraBody.appendChild(tr);
         });
 
-        if(extraList.length === 0) extraBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">No duty swaps.</td></tr>';
+        if(extraList.length === 0) extraBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No duty swaps.</td></tr>';
     }
 
     function update(index, amount, isRefusal) {
         if (!confirm(`Update ${roster[index].name}?`)) return;
-        
         roster[index].current += amount;
-        
-        // Update "Last Worked" timestamp ONLY if they worked (not refused)
-        // Or should Refusal also count as an 'event'? 
-        // Usually Refusal pushes you down too. Let's update timestamp for both.
         roster[index].lastWorked = Date.now();
-        
         save();
         generateList();
-        showMsg("Updated! Sequence re-sorted.");
+        showMsg("Updated! List Re-sorted.");
     }
 
-    // === MONTH SETUP ===
-    function processExcel() {
+    // === IMPORT ===
+    function processBaseSequence() {
         const lines = document.getElementById('excelInput').value.split('\n');
-        let tempStats = roster.map((p, i) => ({ index: i, total: 0 }));
         let count = 0;
         let unmatched = [];
 
+        // Reset hours
+        roster.forEach(p => {
+            p.current = 0;
+            p.lastWorked = 0;
+            p.baseRank = 999; 
+        });
+
         lines.forEach(line => {
-            const parts = line.split(/\t/);
+            const parts = line.trim().split(/\t/);
             if (parts.length >= 2) {
-                const name = parts[1].trim();
-                const shiftChar = parts.length >= 5 ? parts[4].trim().toUpperCase() : '';
-                if (HOURS[shiftChar]) {
+                const name = parts[0].trim();
+                const rank = parseInt(parts[1]);
+                if (!isNaN(rank)) {
                     const match = findPerson(name);
                     if (match) {
-                        tempStats[match.index].total += HOURS[shiftChar];
+                        roster[match.index].baseRank = rank;
                         count++;
                     } else {
                         unmatched.push(name);
@@ -385,24 +435,14 @@
             }
         });
 
-        // Sort by Excel totals
-        tempStats.sort((a, b) => a.total - b.total);
-
-        // Assign new Rank and Reset
-        tempStats.forEach((item, newRank) => {
-            roster[item.index].baseRank = newRank;
-            roster[item.index].current = 0;
-            roster[item.index].lastWorked = 0; // Reset timestamps too
-        });
-
         save();
         document.getElementById('unmatchedList').innerText = unmatched.length ? "Unmatched: " + unmatched.join(', ') : "";
-        alert(`Reset Complete. ${count} records processed.`);
+        alert(`Import Complete!\n- ${count} sequences set.\n- All Hours reset to 0.`);
     }
 
     function hardReset() {
         if (confirm("DELETE ALL DATA?")) {
-            localStorage.removeItem('iocl_v9_data');
+            localStorage.removeItem('iocl_v11_data');
             location.reload();
         }
     }
@@ -434,14 +474,11 @@
             if (search && !p.name.toLowerCase().includes(search)) return;
             const tr = document.createElement('tr');
             
-            // Format Timestamp
-            let dateStr = "-";
-            if (p.lastWorked > 0) {
-                const d = new Date(p.lastWorked);
-                dateStr = d.toLocaleDateString() + " " + d.getHours() + ":" + d.getMinutes();
-            }
+            const badge = p.role === 'Dr' 
+                ? `<span class="badge badge-dr">Driver</span>` 
+                : `<span class="badge badge-nd">Non-Dr</span>`;
 
-            tr.innerHTML = `<td>${p.name}</td><td>${p.group}</td><td>${p.current}</td><td style="font-size:0.8em">${dateStr}</td>`;
+            tr.innerHTML = `<td>${p.name}</td><td>${badge}</td><td>${p.group}</td><td>${p.current}</td><td>${p.baseRank}</td>`;
             tbody.appendChild(tr);
         });
     }
